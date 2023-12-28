@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="./index.js" defer></script>
+    <title>Screen Time</title>
+</head>
+<body>
+    <div class="tab-buttons-container">
+        <button class="tab-button-active" id="screenTimeButton">Screen Time</button>
+        <button class="tab-button-unactive" id="moreButton">More</button>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tab" id="screenTimeTab">
+            <div class="tab-container">
+                <span class="tab-title">Screen Time</span><br>
+                <span class="computer-uptime-text">Computer uptime: 12:00:69</span>
+                
+            </div>
+        </div>
+
+        <div class="tab" id="moreTab" style="display: none;">
+            <div class="tab-container">
+                <span class="tab-title">Total Screen Time</span>
+                
+                <span class="tab-title">Hidden</span>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const screenTimeButton = document.getElementById("screenTimeButton");
+            const moreButton = document.getElementById("moreButton");
+            const screenTimeTab = document.getElementById("screenTimeTab");
+            const moreTab = document.getElementById("moreTab");
+
+            screenTimeButton.addEventListener("click", () => {
+                if(screenTimeButton.className === "tab-button-active") return;
+                
+                moreButton.className = getOppositeTabButtonClass(moreButton.className);
+                screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
+
+                moreTab.style.display = "none";
+                screenTimeTab.style.display = "flex";
+            });
+
+            moreButton.addEventListener("click", () => {
+                if(moreButton.className === "tab-button-active") return;
+
+                moreButton.className = getOppositeTabButtonClass(moreButton.className);
+                screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
+                
+                screenTimeTab.style.display = "none";
+                moreTab.style.display = "flex";
+            });
+        };
+
+        function getOppositeTabButtonClass(className) {
+            if(className === "tab-button-active") return "tab-button-unactive"
+            else if(className === "tab-button-unactive") return "tab-button-active"
+        }
+    </script>
+</body>
+</html>

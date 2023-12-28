@@ -1,0 +1,306 @@
+{
+    "notRunningApps": [
+        {
+            "name": "python.exe",
+            "total_uptime": 43071.83292078972,
+            "current_uptime": 0.7799956798553467,
+            "paused": true
+        },
+        {
+            "name": "SystemPropertiesAdvanced.exe",
+            "total_uptime": 259.6456809043884,
+            "current_uptime": 0.7799956798553467,
+            "paused": true
+        },
+        {
+            "name": "Mystify.scr",
+            "total_uptime": 13.774526596069336,
+            "current_uptime": 0.7799956798553467,
+            "paused": true
+        },
+        {
+            "name": "GitHubDesktop.exe",
+            "total_uptime": 6272.004634141922,
+            "current_uptime": 0.7789866924285889,
+            "paused": true
+        },
+        {
+            "name": "PickerHost.exe",
+            "total_uptime": 84.17223262786865,
+            "current_uptime": 0.7789866924285889,
+            "paused": true
+        },
+        {
+            "name": "paintdotnet.exe",
+            "total_uptime": 9477.665365219116,
+            "current_uptime": 0.7789866924285889,
+            "paused": true
+        },
+        {
+            "name": "WindowsTerminal.exe",
+            "total_uptime": 42894.09715342522,
+            "current_uptime": 2.398007869720459,
+            "paused": true
+        },
+        {
+            "name": "SnippingTool.exe",
+            "total_uptime": 8958.225970506668,
+            "current_uptime": 2.396998882293701,
+            "paused": true
+        },
+        {
+            "name": "mspaint.exe",
+            "total_uptime": 5542.902352571487,
+            "current_uptime": 2.396998882293701,
+            "paused": true
+        },
+        {
+            "name": "rundll32.exe",
+            "total_uptime": 28.664438724517822,
+            "current_uptime": 4.105651140213013,
+            "paused": true
+        },
+        {
+            "name": "ApplicationFrameHost.exe",
+            "total_uptime": 25249.568341255188,
+            "current_uptime": 5.852365970611572,
+            "paused": true
+        }
+    ],
+    "currentlyRunningApps": [
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51794.27924966812,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49407.69124817848,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23394.309579610825,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50147.585416316986,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6857.095568180084,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183348.91642332077,
+            "current_uptime": 0.7799956798553467,
+            "paused": false
+        },
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51795.89726185799,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49409.30926036835,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23395.92759180069,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50149.20342850685,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6858.713580369949,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183350.53443551064,
+            "current_uptime": 2.398007869720459,
+            "paused": false
+        },
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51797.60490512848,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49411.01690363884,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23397.635235071182,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50150.911071777344,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6860.421223640442,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183352.24207878113,
+            "current_uptime": 4.105651140213013,
+            "paused": false
+        },
+        {
+            "name": "Unity Hub.exe",
+            "total_uptime": 3.325655460357666,
+            "current_uptime": 3.325655460357666,
+            "paused": false
+        },
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51799.352628946304,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49412.764627456665,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23399.382958889008,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50152.65879559517,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6862.168947458267,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183353.98980259895,
+            "current_uptime": 5.85337495803833,
+            "paused": false
+        },
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51800.9682636261,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49414.38026213646,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23400.998593568802,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50154.27443027496,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6863.7845821380615,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183355.60543727875,
+            "current_uptime": 7.469009637832642,
+            "paused": false
+        },
+        {
+            "name": "Unity Hub.exe",
+            "total_uptime": 6.689013957977295,
+            "current_uptime": 6.689013957977295,
+            "paused": false
+        },
+        {
+            "name": "chrome.exe",
+            "total_uptime": 51802.58917379379,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "explorer.exe",
+            "total_uptime": 49416.00117230415,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "Spotify.exe",
+            "total_uptime": 23402.619503736496,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "Code.exe",
+            "total_uptime": 50155.89534044266,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "Taskmgr.exe",
+            "total_uptime": 6865.405492305756,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "electron.exe",
+            "total_uptime": 183357.22634744644,
+            "current_uptime": 9.089919805526733,
+            "paused": false
+        },
+        {
+            "name": "Unity Hub.exe",
+            "total_uptime": 8.309924125671387,
+            "current_uptime": 8.309924125671387,
+            "paused": false
+        }
+    ]
+}
