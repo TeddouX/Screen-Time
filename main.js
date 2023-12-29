@@ -4,8 +4,6 @@ const { urlencoded, json } = require('body-parser');
 const path = require('node:path');
 const { log } = require('console');
 
-// width: 500px fixed
-// height: 550px not fixed
 const expressApp = express();
 const port = 3030;
 
@@ -54,6 +52,8 @@ expressApp.post("/", function(req, res) {
         else currentlyRunningApps.push(app);
     }
 
+    
+
     // Send a response to the python script
     res.send("Ok :)");
 });
@@ -63,8 +63,8 @@ expressApp.listen(port, function() {
 });
 
 app.whenReady().then(() => {
-    /*ipcMain.on('set-hidden-apps', setHiddenApps);
-    ipcMain.on('set-apps-display-names', setAppsDisplayNames);*/
+    ipcMain.on('set-hidden-apps', setHiddenApps);
+    ipcMain.on('set-apps-display-names', setAppsDisplayNames);
 
     ipcMain.handle('getRunningApps', getRunningApps);
     ipcMain.handle('getNotRunningApps', getNotRunningApps);

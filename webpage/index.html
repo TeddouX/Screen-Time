@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="./index.js" defer></script>
     <script src="./renderer.js" defer></script>
     <title>Screen Time</title>
 </head>
@@ -18,11 +17,8 @@
         <div class="tab" id="screenTimeTab">
             <div class="tab-container">
                 <span class="tab-title">Screen Time</span><br>
-                <span class="computer-uptime-text">Computer uptime: 12:00:69</span>
-                
                 <span class="computer-uptime-text" id="computerUptime">Computer uptime: 12:00:69</span>
-
-                <div id="screenTimeWidgetsContainer" class="screen-time-widgets-container">
+                <div id="screenTimeWidgetsContainer" class="widgets-container">
                     
                 </div>
             </div>
@@ -31,13 +27,16 @@
         <div class="tab" id="moreTab" style="display: none;">
             <div class="tab-container">
                 <span class="tab-title">Total Screen Time</span>
-                
+                <div id="totalScreenTimeWidgetsContainer" class="widgets-container">
+                    
+                </div>
                 <span class="tab-title">Hidden</span>
-                
-               
+                <div id="hiddenWidgetsContainer" class="widgets-container">
+                    
+                </div>
                 <span class="tab-title">Deleted</span>
-                <div class="deleted-widget">
-
+                <div id="deletedWidgetsContainer" class="widgets-container">
+                    
                 </div>
             </div>
         </div>

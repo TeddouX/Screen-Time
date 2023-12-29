@@ -70,12 +70,9 @@ class App:
         # Save the total time running
         self.total_time_running += self.timer.get()
 
-        return self.to_json()
+        return self.__json__()
 
-    def to_json(self) -> str:
-        # "Delete" the timer
-        self.timer = None
-
+    def __json__(self) -> str:
         return dumps(self, default=lambda o: o.__dict__)
 
     @staticmethod

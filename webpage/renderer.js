@@ -6,17 +6,26 @@ let currentlyRunningApps = [];
 let notRunningApps = [];
 let appsDisplayNames = {};
 let computerUptime = 0;
+let scales = {
+    115: 120,
+    595: 600,
+    1750: 1800,
+    3550: 3600,
+    7150: 7200
+};
+let currentScale = 120;
 
 // Add a function to the String class
 String.prototype.toHHMMSS = function () {
-    var sec_num = parseInt(this, 10); // don't forget the second param
+    var sec_num = parseInt(this, 10);
     var hours   = Math.floor(sec_num / 3600);
     var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
     var seconds = sec_num - (hours * 3600) - (minutes * 60);
 
-    if (hours   < 10) {hours   = "0"+hours;}
-    if (minutes < 10) {minutes = "0"+minutes;}
-    if (seconds < 10) {seconds = "0"+seconds;}
+    if (hours   < 10) hours   = "0" + hours;
+    if (minutes < 10) minutes = "0" + minutes;
+    if (seconds < 10) seconds = "0" + seconds;
+
     return hours + ':' + minutes + ':' + seconds;
 }
 
@@ -55,8 +64,17 @@ function getOppositeTabButtonClass(className) {
     else if (className === "tab-button-unactive") return "tab-button-active"
 }
 
+function sort(a, b) {
+    let keyA = a.current_uptime;
+    let keyB = b.current_uptime;
+    
+    if(keyA > keyB) return -1;
+    if(keyA < keyB) return 1;
+    return 0;
+}
+
 function createCurrentScreenTimeWidget(appName, time) {
-    // This took me too long to make but it is self explanatory
+    // This took me way too long to make but it's pretty self explanatory
     let screenTimeWidget = document.createElement('div');
     let appNameSpan = document.createElement('span');
     let renameButton = document.createElement('button');
@@ -75,12 +93,22 @@ function createCurrentScreenTimeWidget(appName, time) {
     deleteButton.innerHTML += '<img src="./assets/trash.svg" alt="" width="20" height="20">';
     deleteButton.className = 'delete-button';
     screenTimeProgressbarContainer.className = 'screen-time-progressbar-container';
+
+    // Don't know what this does but it works (DON'T TOUCH IT)
+    for (const [key, value] of Object.entries(scales)) {
+        if(key > time) {
+            if(value > currentScale) currentScale = value;
+            break;
+        }
+    }
+
     screenTimeProgressbar.style = `
         background-color: #2271AF;
         height: 12px;
-        width: ${22}%;
+        width: ${time * 100 / currentScale}%;
         border-radius: 3px;
     `;
+
     breakDiv1.className = 'break';
     breakDiv2.className = 'break';
     screenTimeText.innerText = time.toString().toHHMMSS();
@@ -105,8 +133,11 @@ async function update() {
     notRunningApps = await window.electronAPI.getNotRunningApps();
     computerUptime = await window.electronAPI.getComputerUptime();
 
+    currentlyRunningApps.sort(sort);    
+    notRunningApps.sort(sort);
+
     // Set the computer uptime text
-    computerUptimeText.innerText = computerUptime.toString().toHHMMSS();
+    computerUptimeText.innerText = "Computer uptime: " + computerUptime.toString().toHHMMSS();
     // Clear the currentlyRunningAppsContainer
     currentlyRunningAppsContainer.innerHTML = ""
 
@@ -117,8 +148,11 @@ async function update() {
         currentlyRunningAppsContainer.appendChild(createCurrentScreenTimeWidget(app.name, app.current_uptime));
     }
 
-    // Make it call itself after 1000 ms
-    setInterval(update, 1000);
+    window.electronAPI.setHiddenApps(hiddenApps);
+    window.electronAPI.setAppsDisplayNames(appsDisplayNames);
+
+    // Make it call itself after 2000 ms
+    setInterval(update, 2000);
 }
 
 update();
