@@ -11,14 +11,14 @@ json_file_path = environ['APPDATA'] + '/Screen Time/saved'
 currently_running_app: list[App] = []
 not_running_apps: list[App] = []
 apps_display_names = {}
-trash_apps: list[str] = []
+hidden_apps: list[str] = []
 computer_uptime = Timer()
 
 url = "http://127.0.0.1:3030/"
 
 def load():
     global apps_display_names
-    global trash_apps
+    global hidden_apps
 
     with open(f"{json_file_path}/saved.json", 'r') as f:
         json_str = f.read()
@@ -34,7 +34,7 @@ def load():
         currently_running_app.append(app)
     
     apps_display_names = json_dict['apps_display_names']
-    trash_apps = json_dict['trash_apps']
+    hidden_apps = json_dict['hidden_apps']
 
 def save():
     apps = currently_running_app + not_running_apps
@@ -46,7 +46,7 @@ def save():
     obj = {
         "apps": json_list,
         "apps_display_names": apps_display_names,
-        "trash_apps": trash_apps,
+        "hidden_apps": hidden_apps,
     }
     json_str = json.dumps(obj)
 
@@ -94,7 +94,7 @@ def update():
         x = requests.post(url=url, data=payload)
         print(x.text)
     except requests.exceptions.ConnectionError:
-        print('Cannot connect to localhost 3030')
+        print('Cannot connect to', url)
 
 if __name__ == '__main__':
     load()

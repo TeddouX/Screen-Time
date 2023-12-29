@@ -1,11 +1,6 @@
 import electron from 'electron';
 import express from "express";
 import bodyParser from 'body-parser';
-import fs from 'fs'
-import { log } from 'console';
-
-// width: 500px fixed
-// height: 550px not fixed
 
 const { app, BrowserWindow } = electron;
 const { urlencoded, json } = bodyParser;
@@ -21,12 +16,11 @@ const createWindow = () => {
         width: 500,
         minWidth: 500,
         height: 550
-    })
+    });
   
-    win.loadFile('./webpage/index.html')
-}
+    win.loadFile('./webpage/index.html');
+};
 
-// Use a custom json decodeer else it won't work
 expressApp.use(urlencoded({ extended: false })); 
 expressApp.use(json());
 
@@ -37,9 +31,7 @@ expressApp.get("/", function(_req, res) {
 expressApp.post("/", function(req, res) {
     let data = req.body;
     let apps = data.apps;
-    let obj = {}
 
-    // Iterate through the data sent by the python script
     for(let i = 0; i < apps.length; i++) {
         let app = JSON.parse(apps[i]);
         
@@ -47,27 +39,13 @@ expressApp.post("/", function(req, res) {
         else currentlyRunningApps.push(app);
     }
 
-    // Create the object
-    obj = {
-        notRunningApps,
-        currentlyRunningApps
-    }
-
-    // Write to the common json files the data
-    fs.writeFile('com.json', JSON.stringify(obj), (err) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("File written successfully!");
-        };
-    });
-
-    // Clear the arrays
-    notRunningApps = []
-    currentlyRunningApps = []
-
-    // Send a response to the python script
-    res.send("Ok :)")
+    /*setCurrentlyRunningApps(currentlyRunningApps);
+    setNotRunningApps(notRunningApps);
+    
+    res.send({
+        "trash_apps": getTrashApps(),
+        "apps_display_names": getAppsDisplayNames()
+    });*/
 });
 
 expressApp.listen(port, function() {
@@ -75,15 +53,15 @@ expressApp.listen(port, function() {
 });
 
 app.whenReady().then(() => {
-    createWindow()
+    createWindow();
   
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
     })
-})
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        app.quit()
+        app.quit();
     }
-})
+});

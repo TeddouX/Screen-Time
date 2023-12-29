@@ -1,9 +1,8 @@
 {
-  "name": "foo",
+  "name": "screen-time",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "type": "module",
+  "main": "main.js",
   "scripts": {
     "test": "electron ."
   },
