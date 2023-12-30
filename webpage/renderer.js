@@ -1,4 +1,5 @@
 const currentlyRunningAppsContainer = document.getElementById("screenTimeWidgetsContainer");
+const totalScreenTimeContainer = document.getElementById("totalScreenTimeWidgetsContainer");
 const computerUptimeText = document.getElementById("computerUptime")
 
 let hiddenApps = ["python.exe", "SystemPropertiesAdvanced.exe"];
@@ -14,6 +15,7 @@ let scales = {
     7150: 7200
 };
 let currentScale = 120;
+let totalScreenTimeScale = 120;
 
 // Add a function to the String class
 String.prototype.toHHMMSS = function () {
@@ -73,6 +75,14 @@ function sort(a, b) {
     return 0;
 }
 
+function renameApp() {
+    
+}
+
+function deleteApp() {
+    
+}
+
 function createCurrentScreenTimeWidget(appName, time) {
     // This took me way too long to make but it's pretty self explanatory
     let screenTimeWidget = document.createElement('div');
@@ -90,8 +100,10 @@ function createCurrentScreenTimeWidget(appName, time) {
     appNameSpan.className = 'app-name';
     renameButton.innerHTML += '<img src="./assets/pencil.svg" alt="" width="20" height="20">';
     renameButton.className = 'rename-button';
+    renameButton.onclick = () => {renameApp(appName)};
     deleteButton.innerHTML += '<img src="./assets/trash.svg" alt="" width="20" height="20">';
     deleteButton.className = 'delete-button';
+    deleteButton.onclick = () => {deleteApp(appName)};
     screenTimeProgressbarContainer.className = 'screen-time-progressbar-container';
 
     // Don't know what this does but it works (DON'T TOUCH IT)
@@ -111,7 +123,13 @@ function createCurrentScreenTimeWidget(appName, time) {
 
     breakDiv1.className = 'break';
     breakDiv2.className = 'break';
-    screenTimeText.innerText = time.toString().toHHMMSS();
+
+    try {
+        screenTimeText.innerText = time.toString().toHHMMSS();
+    } catch(_e) { 
+        return;
+    }
+
     screenTimeText.className = 'screen-time-text';
 
     screenTimeProgressbarContainer.appendChild(screenTimeProgressbar);
@@ -127,10 +145,80 @@ function createCurrentScreenTimeWidget(appName, time) {
     return screenTimeWidget;
 }
 
+function createTotalScreenTimeWidget(appName, time, active) {
+    // This took me way too long to make but it's pretty self explanatory
+    let totalScreenTimeWidget = document.createElement('div');
+    let appNameSpan = document.createElement('span');
+    let renameButton = document.createElement('button');
+    let deleteButton = document.createElement('button');
+    let screenTimeProgressbarContainer = document.createElement('div');
+    let screenTimeProgressbar = document.createElement('div');
+    let breakDiv1 = document.createElement('div');
+    let breakDiv2 = document.createElement('div');
+    let breakDiv3 = document.createElement('div');
+    let screenTimeText = document.createElement('span');
+    let activeText = document.createElement('span');
+
+    totalScreenTimeWidget.className = 'screen-time-widget';
+    appNameSpan.innerText = appName;
+    appNameSpan.className = 'app-name';
+    renameButton.innerHTML += '<img src="./assets/pencil.svg" alt="" width="20" height="20">';
+    renameButton.className = 'rename-button';
+    renameButton.onclick = () => {renameApp(appName)};
+    deleteButton.innerHTML += '<img src="./assets/trash.svg" alt="" width="20" height="20">';
+    deleteButton.className = 'delete-button';
+    deleteButton.onclick = () => {deleteApp(appName)};
+    screenTimeProgressbarContainer.className = 'screen-time-progressbar-container';
+
+    // Don't know what this does but it works (DON'T TOUCH IT)
+    for (const [key, value] of Object.entries(scales)) {
+        if(key > time) {
+            if(value > totalScreenTimeScale) totalScreenTimeScale = value;
+            break;
+        }
+    }
+
+    screenTimeProgressbar.style = `
+        background-color: #2271AF;
+        height: 12px;
+        width: ${time * 100 / totalScreenTimeScale}%;
+        border-radius: 3px;
+    `;
+
+    breakDiv1.className = 'break';
+    breakDiv2.className = 'break';
+    breakDiv3.className = 'break';
+
+    try {
+        screenTimeText.innerText = time.toString().toHHMMSS();
+    } catch(_e) { 
+        return;
+    }
+
+    screenTimeText.className = 'screen-time-text';
+    activeText.innerText = `Active: ${active}`
+    activeText.className = `active-text-text`
+
+
+    screenTimeProgressbarContainer.appendChild(screenTimeProgressbar);
+    totalScreenTimeWidget.appendChild(appNameSpan);
+    totalScreenTimeWidget.appendChild(renameButton);
+    totalScreenTimeWidget.appendChild(deleteButton);
+    totalScreenTimeWidget.appendChild(breakDiv1);
+    totalScreenTimeWidget.appendChild(screenTimeProgressbarContainer);
+    totalScreenTimeWidget.appendChild(breakDiv2);
+    totalScreenTimeWidget.appendChild(screenTimeText);
+    totalScreenTimeWidget.appendChild(breakDiv3);
+    totalScreenTimeWidget.appendChild(activeText);
+
+    return totalScreenTimeWidget;
+}
+
 async function update() {
     // Communicate with main by the electron API created in preload (go see docs: https://www.electronjs.org/docs/latest/tutorial/ipc)
     currentlyRunningApps = await window.electronAPI.getRunningApps();
     notRunningApps = await window.electronAPI.getNotRunningApps();
+    notRunningApps.push(...currentlyRunningApps); // Add the running apps to the not running apps array
     computerUptime = await window.electronAPI.getComputerUptime();
 
     currentlyRunningApps.sort(sort);    
@@ -138,8 +226,10 @@ async function update() {
 
     // Set the computer uptime text
     computerUptimeText.innerText = "Computer uptime: " + computerUptime.toString().toHHMMSS();
-    // Clear the currentlyRunningAppsContainer
-    currentlyRunningAppsContainer.innerHTML = ""
+    // Clear the widgets containers
+    currentlyRunningAppsContainer.innerHTML = "";
+    totalScreenTimeContainer.innerHTML = "";
+
 
     for (let i = 0; i < currentlyRunningApps.length; i++) {
         const app = currentlyRunningApps[i];
@@ -148,11 +238,15 @@ async function update() {
         currentlyRunningAppsContainer.appendChild(createCurrentScreenTimeWidget(app.name, app.current_uptime));
     }
 
+    for (let i = 0; i < notRunningApps.length; i++) {
+        const app = notRunningApps[i];
+
+        if(app.paused) totalScreenTimeContainer.appendChild(createTotalScreenTimeWidget(app.name, app.total_uptime, false));
+        else totalScreenTimeContainer.appendChild(createTotalScreenTimeWidget(app.name, app.current_uptime, true));
+    }
+
     window.electronAPI.setHiddenApps(hiddenApps);
     window.electronAPI.setAppsDisplayNames(appsDisplayNames);
-
-    // Make it call itself after 2000 ms
-    setInterval(update, 2000);
 }
 
-update();
+setInterval(update, 2000)

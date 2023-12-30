@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const express = require('express');
 const { urlencoded, json } = require('body-parser');
 const path = require('node:path');
@@ -7,8 +7,8 @@ const { log } = require('console');
 const expressApp = express();
 const port = 3030;
 
-let currentlyRunningApps = ['a', 'b'];
-let notRunningApps = ['a', 'b'];
+let currentlyRunningApps = [];
+let notRunningApps = [];
 let hiddenApps = [];
 let appsDisplayNames = {};
 let computerUptime = 0;
@@ -39,20 +39,18 @@ expressApp.post("/", function(req, res) {
     let apps = data.apps;
     
     // Clear the arrays
-    notRunningApps = [];
     currentlyRunningApps = [];
+    notRunningApps = [];
 
     computerUptime = data.computer_uptime;
 
     // Iterate through the data sent by the python script
     for(let i = 0; i < apps.length; i++) {
         let app = JSON.parse(apps[i]);
-        
+
         if(app.paused) notRunningApps.push(app);
         else currentlyRunningApps.push(app);
     }
-
-    
 
     // Send a response to the python script
     res.send("Ok :)");

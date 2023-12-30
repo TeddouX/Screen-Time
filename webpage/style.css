@@ -202,3 +202,8 @@ body {
     border-radius: 4px;
     font-family: 'Roboto', sans-serif;
 }
+
+.active-text-text {
+    align-self: flex-start;
+    margin-top: 6px;
+}

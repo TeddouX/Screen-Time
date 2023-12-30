@@ -1,8 +1,8 @@
 import requests
 import time
 import json
+import subprocess
 
-from pywinctl import getAllAppsNames
 from os import path, environ, makedirs
 from app import App, Timer
 
@@ -20,7 +20,7 @@ def load():
     global apps_display_names
     global hidden_apps
 
-    with open(f"{json_file_path}/saved.json", 'r') as f:
+    with open(f"{json_file_path}/saved.json", 'r+') as f:
         json_str = f.read()
 
     try:
@@ -56,6 +56,17 @@ def save():
     with open(f"{json_file_path}/saved.json", 'w') as f:
         f.write(json_str)
 
+def getAllAppsNames():
+    command = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName'
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    arr = []
+
+    for idx, line in enumerate(proc.stdout):
+        if line.rstrip() and idx > 2:
+            arr.append(line.decode().rstrip())
+
+    return arr
+
 def update():
     apps = getAllAppsNames()
     apps_array = []
@@ -65,6 +76,14 @@ def update():
             currently_running_app.append(i)
             not_running_apps.remove(i)
             i.resume()
+
+        apps_array.append(json.dumps({
+            "name": i.name,
+            "total_uptime": i.total_time_running + i.timer.get(),
+            "current_uptime": i.timer.get(),
+            "paused": i.timer.paused,
+        }))
+
     
     for i in currently_running_app:
         if not i.name in apps:
@@ -96,8 +115,6 @@ def update():
     except requests.exceptions.ConnectionError:
         print('Cannot connect to', url)
 
-    save()
-
 if __name__ == '__main__':
     load()
     computer_uptime.start()
@@ -106,7 +123,7 @@ if __name__ == '__main__':
         while True:
             update()
             time.sleep(1)
-    except KeyboardInterrupt:
+    except:
         print('Saving data...')
         computer_uptime.reset()
         save()
