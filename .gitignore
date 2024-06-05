@@ -1,3 +1,4 @@
 /node_modules
 /__pycache__
-/webpage/UITest.html
+/src/webpage/UITest.html
+out/

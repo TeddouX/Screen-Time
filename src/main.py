@@ -2,6 +2,9 @@
 FOR PIP: python3 -m pip install <pkg_name>
 """
 
+import pythoncom
+pythoncom.CoInitialize()
+
 import json, threading, pywinctl, logging, click, sys
 
 from flask import Flask

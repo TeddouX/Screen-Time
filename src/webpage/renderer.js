@@ -302,6 +302,10 @@ function createCurrentScreenTimeWidget(appName, appDisplayName, time) {
     let currentScreenTimeWidget = document.createElement("div");
     currentScreenTimeWidget.className = 'screen-time-widget';
 
+    // Cross product to find the percentage that the progressbar should be set to
+    // ?    | 100%
+    // time | biggestCurrentScreenTime
+
     // If the time is bigger than the biggest, set the biggest to the time
     if(time > biggestCurrentScreenTime)
         biggestCurrentScreenTime = time;
@@ -332,10 +336,6 @@ function createTotalScreenTimeWidget(appName, appDisplayName, time, active) {
     // Create a container div
     let totalScreenTimeWidget = document.createElement('div');
     totalScreenTimeWidget.className = 'screen-time-widget';
-
-    // Cross product to find the percentage that the progressbar should be set to
-    // ?    | 100%
-    // time | biggestTotalScreenTime
 
     // If the time is bigger than the biggest, set the biggest to the time
     if(time > biggestTotalScreenTime)

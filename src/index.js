@@ -14,7 +14,6 @@ const port = 8080;
 const urlPath = '/screen-time';
 const jsonFilePath = process.env.APPDATA + "/Screen Time/js/"
 const updateRate = 2000;
-const pythonScriptCommand = 'python3 main.py';
 
 let currentlyRunningApps = [];
 let notRunningApps = [];
@@ -51,7 +50,7 @@ const createWindow = () => {
         }
     });
   
-    win.loadFile('./webpage/index.html');
+    win.loadFile('./src/webpage/index.html');
 };
 
 function getApps() {
@@ -109,7 +108,7 @@ function getApps() {
     
     // Catch any errors
     req.on('error', (err) => {
-        logger.error(`An error occured whilst trying to connect to the Flask server: ${err.message}. Try to restart the python script by typing: ${pythonScriptCommand}`);
+        logger.error(`An error occured whilst trying to connect to the Flask server: ${err.message}.`);
     });
     
     // Send the renamed apps and the hidden apps to the Flask server
