@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="./renderer.js" defer></script>
+    <title>Screen Time</title>
+</head>
+<body>
+    <div class="tab-buttons-container">
+        <button class="tab-button-active" id="screenTimeButton">Screen Time</button>
+        <button class="tab-button-unactive" id="moreButton">More</button>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tab" id="screenTimeTab">
+            <div class="tab-container">
+                <span class="tab-title">Screen Time</span><br>
+                <span class="computer-uptime-text" id="computerUptime">Computer uptime: 00:00:00</span>
+
+                <div id="screenTimeWidgetsContainer" class="widgets-container">
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab" id="moreTab" style="display: none;">
+            <div class="tab-container">
+                <span class="tab-title">Total Screen Time</span>
+                <div id="totalScreenTimeWidgetsContainer" class="widgets-container">
+                    
+                </div>
+                
+                <span class="tab-title">Hidden</span>
+                <div id="hiddenWidgetsContainer" class="widgets-container">
+                    <div class="deleted-widget">
+                        <span class="app-name">electron (electron)</span>
+                        <button class="restore-button"><span>Restore</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="prompt-container" id="promptContainer" style="display: none;">
+        <div class="background" id="promptBackground" hidden></div>
+        <div class="confirm-prompt" id="confirmPrompt" style="display: none;">
+            <span class="prompt-title">TEXT_HERE</span> <div class="break"></div>
+            <button class="cancel-button">Cancel</button>
+            <button class="confirm-button">Confirm</button>
+        </div>
+
+        <div class="text-prompt" style="display: none;" id="textPrompt" >
+            <span class="prompt-title">TEXT_HERE</span> <div class="break"></div>
+            <input type="text" id="textPromptTextInput" class="text-prompt-input" autocomplete="off" placeholder=""> <div class="break"></div>
+            <button class="cancel-button">Cancel</button>
+            <button class="confirm-button">Confirm</button>
+        </div>
+    </div>
+</body>
+</html>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "screen-time",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "electron index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^30.0.8",
+    "request": "^2.88.2",
+    "winston": "^3.13.0"
+  }
+}

@@ -1,0 +1,296 @@
+body {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    color: #cacaca;
+    background-color: #272727;
+    font-family: 'Roboto', sans-serif;
+    height: 100%;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #272727;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #cecece;
+    border-radius: 4px;
+}
+
+.break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+.tab-buttons-container {
+    position: relative;
+    border-radius: 6px;
+    background-color: #4F4F4F;
+    padding: 3px;
+    margin-bottom: -24px;
+    border: #949A9F;
+    color: #cacaca;
+}
+
+.tab-button-active {
+    border-radius: 6px;
+    background-color: #2271AF;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border: #949A9F;
+    color: #f5f5f5;
+}
+
+.tab-button-unactive {
+    border-radius: 6px;
+    background-color: #4F4F4F;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border: #949A9F;
+    color: #cacaca;
+}
+
+.tab-button-active:hover {
+    background-color: #144870;
+}
+
+.tab-button-active:active {
+    background-color: #14375e;
+}
+
+.tab-button-unactive:hover {
+    background-color: #707070;
+}
+
+.tab-button-unactive:active {
+    background-color: #606060;
+}
+
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #333333;
+    margin-top: 5px;
+    width: 95%;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-bottom: 6px;
+    border-radius: 4px;
+}
+
+.tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #2E2E2E;
+    margin-top: 5px;
+    margin-left: 0px;
+    margin-right: 0px;
+    width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-radius: 4px;
+}
+
+.tab-title {
+    background-color: #3B3B3B;
+    border-radius: 4px;
+    margin-top: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
+
+.computer-uptime-text {
+    align-self: flex-start;
+    margin-top: 6px;
+    margin-left: 4px;
+}
+
+.widgets-container {
+    width: 100%;
+    height: auto;
+}
+
+.screen-time-widget {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    background-color: #272727;
+    box-sizing: border-box;
+    margin-top: 20px;
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+}
+
+.rename-button {
+    display: flex;
+    margin-left: auto;
+    margin-right: 6px;
+    padding: 0px;
+    width: 30px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    border: #cecece;
+    border-radius: 4px;
+}
+
+.delete-button {
+    display: flex;
+    padding: 0px;
+    width: 30px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    border: #cecece;
+    border-radius: 4px;
+}
+
+.restore-button:hover,
+.delete-button:hover,
+.rename-button:hover,
+.confirm-button:hover, 
+.cancel-button:hover,
+::-webkit-scrollbar-thumb:hover {
+    background-color: #c0c0c0;
+}
+
+.restore-button:active,
+.delete-button:active,
+.rename-button:active,
+.confirm-button:active, 
+.cancel-button:active,
+::-webkit-scrollbar-thumb:active {
+    background-color: #b4b4b4;
+}
+
+.screen-time-progressbar-container {
+    background-color: #333333;
+    height: 12px;
+    width: 100%;
+    border-radius: 3px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.screen-time-progressbar {
+    background-color: #2271AF;
+    height: 12px;
+    width: 75%;
+    border-radius: 3px;
+}
+
+.deleted-widget {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #272727;
+    box-sizing: border-box;
+    margin-top: 10px;
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+}
+
+.restore-button {
+    display: flex;
+    margin-left: auto;
+    margin-right: 6px;
+    padding-left: 30px;
+    padding-right: 30px;
+    width: 50px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    border: #F0F0F0;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.active-text-text {
+    align-self: flex-start;
+    margin-top: 6px;
+}
+
+.prompt-container {
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.background {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+}
+
+.confirm-prompt, .text-prompt {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    background-color: #2E2E2E;
+    padding: 20px 15px 20px 15px;
+    border-radius: 8px;
+    width: 50%;
+    height: fit-content;
+    max-width: 400px;
+    z-index: 20;
+}
+
+.prompt-title {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.confirm-button, .cancel-button {
+    margin-top: 24px;
+    display: flex;
+    padding: 0px;
+    width: 65px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    border: #F0F0F0;
+    border-radius: 4px;
+}
+
+.confirm-button {
+    margin-left: auto;
+}
+
+.text-prompt-input {
+    margin: 15px auto 0px auto;
+    width: 70%;
+    height: 20px;
+    border-radius: 4px;
+    background-color: #F0F0F0;
+    border: #F0F0F0;
+}
+
+.text-prompt-input:focus {
+    outline: none;
+    margin: 15px auto 0px auto;
+    width: 70%;
+    height: 20px;
+}
