@@ -1,4 +1,5 @@
-/node_modules
+node_modules/
 /src/__pycache__
 /src/webpage/UITest.html
 out/
+*.spec

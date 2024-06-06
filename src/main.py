@@ -1,11 +1,10 @@
 """
 FOR PIP: python3 -m pip install <pkg_name>
+
+TO BUILD: pyinstaller --noconfirm --console --onedir --collect-all "pywinctl" --collect-all "flask" "./src/main.py"
 """
 
-import pythoncom
-pythoncom.CoInitialize()
-
-import json, threading, pywinctl, logging, click, sys
+import json, logging, click, sys, queue, time, threading
 
 from flask import Flask
 from os import path, environ, makedirs
@@ -14,6 +13,9 @@ from sys import stdout
 
 # Format for the logger
 FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+
+# The update rate
+UPDATE_RATE = 0.5
 
 # Svae path for the json file and logs
 SAVE_PATH = environ['APPDATA'] + "/Screen Time/python/"
@@ -28,6 +30,8 @@ apps_array: list[dict] = []
 flask_app = Flask("Hello, World!")
 # The port for the Flask app
 FLASK_PORT = 8080
+
+update_queue = queue.Queue(1)
 
 # A filter for the logger to remove the color from the logs
 class RemoveColorFilter(logging.Filter):
@@ -111,70 +115,81 @@ def save():
         f.write(json_str)
         logger.info(f"Successfully saved the json data to: {SAVE_PATH}saved.json")
 
-def getAllAppsNames():
-    # Get all running apps names
-    apps_names = pywinctl.getAllAppsNames()
+def update(q: queue.Queue) -> None:
+    import pywinctl
 
-    # Remove the .exe from the apps
-    for i in range(len(apps_names)):
-        apps_names[i] = apps_names[i].replace(".exe", "")
+    def getAllAppsNames():
+        # Get all running apps names
+        apps_names = pywinctl.getAllAppsNames()
 
-    return apps_names
+        # Remove the .exe from the apps
+        for i in range(len(apps_names)):
+            apps_names[i] = apps_names[i].replace(".exe", "")
 
-def addAppToArray(name: str, total_uptime: float, current_uptime: float, running: bool) -> None:
-    apps_array.append(json.dumps({
-        "name": name,
-        "total_uptime": total_uptime,
-        "current_uptime": current_uptime,
-        "running": running,
-    }))
+        return apps_names
 
-def update():
-    global apps_array
+    def addAppToArray(name: str, total_uptime: float, current_uptime: float, running: bool) -> None:
+        apps_array.append(json.dumps({
+            "name": name,
+            "total_uptime": total_uptime,
+            "current_uptime": current_uptime,
+            "running": running,
+        }))
 
-    apps = getAllAppsNames()
-    # Clear the apps array
-    apps_array = []
+    while True:
+        q.queue.clear()
 
-    for i in currently_running_apps:
-        # If the app doesn't exist anymore (it got closed) remove it from the currently running apps and add it to the not running apps
-        if not i.name in apps:
-            i.onKill()
-            currently_running_apps.remove(i)
-            not_running_apps.append(i)
+        apps = getAllAppsNames()
+        # Clear the apps array
+        apps_array = []
 
-            # Add a not running app
-            addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
-        else:
-            # Add a running app
-            addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
+        for i in currently_running_apps:
+            # If the app doesn't exist anymore (it got closed) remove it from the currently running apps and add it to the not running apps
+            if not i.name in apps:
+                i.onKill()
+                currently_running_apps.remove(i)
+                not_running_apps.append(i)
 
-    for i in not_running_apps:
-        # If the app exists in apps (it has been reopened) remove it from the not running apps and add it to the currently running apps
-        if i.name in apps:
-            currently_running_apps.append(i)
-            not_running_apps.remove(i)
-            i.resume()
+                # Add a not running app
+                addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
+            else:
+                # Add a running app
+                addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
 
-            # Add a running app
-            addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
+        for i in not_running_apps:
+            # If the app exists in apps (it has been reopened) remove it from the not running apps and add it to the currently running apps
+            if i.name in apps:
+                currently_running_apps.append(i)
+                not_running_apps.remove(i)
+                i.resume()
 
-        else:
-            # Add a not running app
-            addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
+                # Add a running app
+                addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
 
-    # If it's a completly new app that is neither in the currently running apps nor in the not running apps, create a new app for it
-    for i in apps:
-        if (not i in ([j.name for j in currently_running_apps] or [j.name for j in not_running_apps])):
-            app = App(i)
-            app.start()
-            currently_running_apps.append(app)
+            else:
+                # Add a not running app
+                addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
 
+        # If it's a completly new app that is neither in the currently running apps nor in the not running apps, create a new app for it
+        for i in apps:
+            if (not i in ([j.name for j in currently_running_apps] or [j.name for j in not_running_apps])):
+                app = App(i)
+                app.start()
+                currently_running_apps.append(app)
+        
+        # Add the apps_aray to the queue
+        q.put(apps_array)
 
+        time.sleep(UPDATE_RATE)
+        
 @flask_app.route("/screen-time", methods=['POST'])
 def home():
-    # Update the apps array
-    update()
+    # While the update queue is empty, don't do anything
+    while not update_queue.full():
+        pass
+
+    # Set the apps_array to the contents of the queue
+    apps_array = update_queue.get()
 
     # Create the payload that gets sent back
     payload = {
@@ -193,9 +208,14 @@ if __name__ == '__main__':
     # Start the computer uptime time
     computer_uptime.start()
 
+    # Create a thread for the update
+    update_thread = threading.Thread(target=update, args=(update_queue,), daemon=True)
+    # Start the thread
+    update_thread.start()
+
     # Start the Flask app
     flask_app.run(port=FLASK_PORT)
-    
+
     # Save data
     save()
     
