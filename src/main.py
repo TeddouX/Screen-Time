@@ -1,15 +1,12 @@
-"""
-FOR PIP: python3 -m pip install <pkg_name>
-
-TO BUILD: pyinstaller --noconfirm --console --onedir --collect-all "pywinctl" --collect-all "flask" "./src/main.py"
-"""
-
-import json, logging, click, sys, queue, time, threading
+import logging, threading, json
 
 from flask import Flask
 from os import path, environ, makedirs
 from app import App, Timer
-from sys import stdout
+from sys import stdout, exit
+from queue import Queue
+from time import sleep
+from click import unstyle
 
 # Format for the logger
 FORMAT = '%(asctime)s %(levelname)s: %(message)s'
@@ -17,8 +14,12 @@ FORMAT = '%(asctime)s %(levelname)s: %(message)s'
 # The update rate
 UPDATE_RATE = 0.5
 
-# Svae path for the json file and logs
+# Save path in the appdata
 SAVE_PATH = environ['APPDATA'] + "/Screen Time/python/"
+# All the save paths
+JSON_FILE_PATH = SAVE_PATH + 'saved.json'
+LOCK_FILE_PATH = SAVE_PATH + 'lock.txt'
+LOGS_FILE_PATH = SAVE_PATH + 'logs.log'
 
 # Variables
 currently_running_apps: list[App] = []
@@ -31,30 +32,57 @@ flask_app = Flask("Hello, World!")
 # The port for the Flask app
 FLASK_PORT = 8080
 
-update_queue = queue.Queue(1)
+# A queue yo use inter-thread communication
+update_queue = Queue(1)
 
 # A filter for the logger to remove the color from the logs
 class RemoveColorFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self, record) -> bool:
         if record and record.msg and isinstance(record.msg, str):
             # Remove any styling from the text
-            record.msg = click.unstyle(record.msg) 
+            record.msg = unstyle(record.msg) 
         return True
 
-def createLogger():
-    global logger
 
+def checkIfScriptIsAlreadRunning() -> None:
+    try:
+        with open(LOCK_FILE_PATH, 'r') as f:
+            # Read the contents of the file
+            lock = f.read()
+            if lock == 'Locked':
+                logger.warning('Script is already running, exitting now.')
+
+                # Exit the program because another instance of this script is running
+                exit(0)
+            else:
+                # Prevents other instances of this script from running
+                with open(LOCK_FILE_PATH, 'w') as f:
+                    f.write('Locked')   
+
+    except FileNotFoundError:
+                # Prevents other instances of this script from running
+        with open(LOCK_FILE_PATH, 'x') as f:
+            f.write('Locked')
+
+def removeScriptLock() -> None:
+    with open(LOCK_FILE_PATH, 'w') as f:
+        # Clear the lock file
+        f.write('')
+
+        logger.info('Removed the lock.')
+
+def createLogger() -> logging.Logger:
     # Create a conole logger
     stdout_handler = logging.StreamHandler(stream=stdout)
 
     try:
-        file_handler = logging.FileHandler(SAVE_PATH + 'logs.log')
+        file_handler = logging.FileHandler(LOGS_FILE_PATH)
     except FileNotFoundError:
         # Create a new log file
-        open('logs/pythonLogs.log', "x")
+        open(LOGS_FILE_PATH, "x")
 
         # Create a new file logger
-        file_handler = logging.FileHandler(SAVE_PATH + 'logs.log')
+        file_handler = logging.FileHandler(LOGS_FILE_PATH)
     
     # Add the remove color filter to the fil logger
     file_handler.addFilter(RemoveColorFilter())
@@ -62,25 +90,28 @@ def createLogger():
     # Configurate the logging library
     logging.basicConfig(format=FORMAT, handlers=[stdout_handler, file_handler], level=logging.DEBUG)
     # Create a new logger for this python script
-    logger = logging.getLogger(__name__)
+    return logging.getLogger(__name__)
 
-def checkSavePath():
+def checkSavePath() -> None:
     # If the save directory doesn't exist, create it
     if not path.exists(SAVE_PATH):
         makedirs(SAVE_PATH)
 
-def load():
+def load() -> list[App]:
     json_str = ""
+    apps = []
 
     try:
         # Get data from json file
-        with open(f"{SAVE_PATH}saved.json", 'r+') as f:
+        with open(JSON_FILE_PATH, 'r+') as f:
             json_str = f.read()
     except FileNotFoundError:
-        logger.info("The json save file doesn't exist. Creating it now.")
+        logger.info("The json save file doesn't exist. Creating it now and skipping the loading of the data.")
         # Create a new json file
-        open(f"{SAVE_PATH}saved.json", 'x')
+        open(JSON_FILE_PATH, 'x')
 
+        # Exit because the script cannot load an empty file
+        return
 
     try:
         # Convert the data (string) to a python dict
@@ -93,11 +124,13 @@ def load():
     for i in json_dict['apps']:
         app = App.from_json(json.loads(i))
         app.start()
-        currently_running_apps.append(app)
+        apps.append(app)
     
     logger.info("Successfully loaded the json save file.")
 
-def save():
+    return apps
+
+def save() -> None:
     apps = currently_running_apps + not_running_apps
     json_list: list[str] = []
 
@@ -111,11 +144,11 @@ def save():
     json_str = json.dumps(obj)
 
     # Write the data to the json file
-    with open(f"{SAVE_PATH}saved.json", 'w') as f:
+    with open(JSON_FILE_PATH, 'w') as f:
         f.write(json_str)
-        logger.info(f"Successfully saved the json data to: {SAVE_PATH}saved.json")
+        logger.info(f"Successfully saved the json data to: {JSON_FILE_PATH}")
 
-def update(q: queue.Queue) -> None:
+def update(q: Queue) -> None:
     import pywinctl
 
     def getAllAppsNames():
@@ -180,10 +213,10 @@ def update(q: queue.Queue) -> None:
         # Add the apps_aray to the queue
         q.put(apps_array)
 
-        time.sleep(UPDATE_RATE)
+        sleep(UPDATE_RATE)
         
 @flask_app.route("/screen-time", methods=['POST'])
-def home():
+def home() -> dict:
     # While the update queue is empty, don't do anything
     while not update_queue.full():
         pass
@@ -199,11 +232,17 @@ def home():
 
     return payload
 
-if __name__ == '__main__':
-    checkSavePath()
-    createLogger()
 
-    load()
+if __name__ == '__main__':
+    # Check if the save path exists
+    checkSavePath()
+    # Create the logger
+    logger = createLogger()
+
+    checkIfScriptIsAlreadRunning()
+
+    # Load data from the json file
+    currently_running_apps = load()
 
     # Start the computer uptime time
     computer_uptime.start()
@@ -216,8 +255,11 @@ if __name__ == '__main__':
     # Start the Flask app
     flask_app.run(port=FLASK_PORT)
 
-    # Save data
+    # Save the data to the json file
     save()
+
+    # Remove the lock that prevents other scripts from running
+    removeScriptLock()
     
     # Run sys.exit() after 1.0 seconds
-    threading.Timer(1.0, sys.exit()).start()
+    threading.Timer(1.0, exit()).start()
