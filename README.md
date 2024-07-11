@@ -11,7 +11,7 @@ A program used to measure time that you spent on other apps
 
 ## Installation
 
-Go into releases and download the ScreenTimeInstaller.exe from the latest release and un it (no viruses I promise)
+Go into releases and download the ScreenTimeInstaller.exe from the latest release and run it (no viruses I promise).
     
 ## Future updates might include
 - Automatic light/dark mode
