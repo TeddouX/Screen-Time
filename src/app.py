@@ -16,18 +16,18 @@ class Timer():
 
     def pause(self) -> None:
         if self.time_started is None:
-            raise ValueError("Timer not started")
+            return
         if self.paused:
-            raise ValueError("Timer is already paused")
+            return
 
         self.time_paused = time()
         self.paused = True
 
     def resume(self) -> None:
         if self.time_started is None:
-            raise ValueError("Timer not started")
+            return
         if not self.paused:
-            raise ValueError("Timer is not paused")
+            return
 
         pause_time = time() - self.time_paused
         self.time_started = self.time_started + pause_time
@@ -40,7 +40,7 @@ class Timer():
 
     def get(self) -> float:
         if self.time_started is None:
-            raise ValueError("Timer not started")
+            return 0
         if self.paused:
             return self.time_paused - self.time_started
         else:
@@ -73,8 +73,6 @@ class App:
         return self.__json__()
 
     def __json__(self) -> str:
-        self.timer = None
-
         return dumps(self, default=lambda o: o.__dict__)
 
     @staticmethod

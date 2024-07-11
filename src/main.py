@@ -1,9 +1,13 @@
-import logging, threading, json
+import logging
+import threading
+import json
+import os
+import sys
+import time
+import psutil
 
 from flask import Flask
-from os import path, environ, makedirs
 from app import App, Timer
-from sys import stdout, exit
 from queue import Queue
 from time import sleep
 from click import unstyle
@@ -12,23 +16,29 @@ from click import unstyle
 FORMAT = '%(asctime)s %(levelname)s: %(message)s'
 
 # The update rate
-UPDATE_RATE = 0.5
+UPDATE_RATE = 2
+
+# The saving rate
+SAVE_RATE = round(10 / UPDATE_RATE) # Every n seconds
+
+# The app's name (maybe for later :shrug:)
+APP_NAME = "Screen Time.exe"
 
 # Save path in the appdata
-SAVE_PATH = environ['APPDATA'] + "/Screen Time/python/"
+SAVE_PATH = os.environ['APPDATA'] + "/Screen Time/python/"
 # All the save paths
 JSON_FILE_PATH = SAVE_PATH + 'saved.json'
 LOCK_FILE_PATH = SAVE_PATH + 'lock.txt'
 LOGS_FILE_PATH = SAVE_PATH + 'logs.log'
 
 # Variables
+computer_uptime = Timer()
 currently_running_apps: list[App] = []
 not_running_apps: list[App] = []
-computer_uptime = Timer()
 apps_array: list[dict] = []
 
 # Create the Flask app
-flask_app = Flask("Hello, World!")
+flask_app = Flask("Screen Time")
 # The port for the Flask app
 FLASK_PORT = 8080
 
@@ -42,47 +52,18 @@ class RemoveColorFilter(logging.Filter):
             # Remove any styling from the text
             record.msg = unstyle(record.msg) 
         return True
-
-
-def checkIfScriptIsAlreadRunning() -> None:
-    try:
-        with open(LOCK_FILE_PATH, 'r') as f:
-            # Read the contents of the file
-            lock = f.read()
-            if lock == 'Locked':
-                logger.warning('Script is already running, exitting now.')
-
-                # Exit the program because another instance of this script is running
-                exit(0)
-            else:
-                # Prevents other instances of this script from running
-                with open(LOCK_FILE_PATH, 'w') as f:
-                    f.write('Locked')   
-
-    except FileNotFoundError:
-                # Prevents other instances of this script from running
-        with open(LOCK_FILE_PATH, 'x') as f:
-            f.write('Locked')
-
-def removeScriptLock() -> None:
-    with open(LOCK_FILE_PATH, 'w') as f:
-        # Clear the lock file
-        f.write('')
-
-        logger.info('Removed the lock.')
+    
+def checkIfScriptIsAlreadRunning() -> bool:
+    for i in psutil.net_connections():
+        # Check if the port is already in use
+        if i.laddr.ip == "127.0.0.1" and i.laddr.port == FLASK_PORT:
+            return True
+    return False
 
 def createLogger() -> logging.Logger:
     # Create a conole logger
-    stdout_handler = logging.StreamHandler(stream=stdout)
-
-    try:
-        file_handler = logging.FileHandler(LOGS_FILE_PATH)
-    except FileNotFoundError:
-        # Create a new log file
-        open(LOGS_FILE_PATH, "x")
-
-        # Create a new file logger
-        file_handler = logging.FileHandler(LOGS_FILE_PATH)
+    stdout_handler = logging.StreamHandler(stream=sys.stdout)
+    file_handler = logging.FileHandler(LOGS_FILE_PATH)
     
     # Add the remove color filter to the fil logger
     file_handler.addFilter(RemoveColorFilter())
@@ -94,8 +75,9 @@ def createLogger() -> logging.Logger:
 
 def checkSavePath() -> None:
     # If the save directory doesn't exist, create it
-    if not path.exists(SAVE_PATH):
-        makedirs(SAVE_PATH)
+    if not os.path.exists(SAVE_PATH):
+        logger.info("The save folder doesn't exist. Creating it now...")
+        os.makedirs(SAVE_PATH)
 
 def load() -> list[App]:
     json_str = ""
@@ -110,15 +92,14 @@ def load() -> list[App]:
         # Create a new json file
         open(JSON_FILE_PATH, 'x')
 
-        # Exit because the script cannot load an empty file
-        return
+        return []
 
     try:
         # Convert the data (string) to a python dict
         json_dict = json.loads(json_str)
     except json.JSONDecodeError as e:
         logger.error(f"An error occured whilst trying to load the json file: {e.__str__()}")
-        return
+        return []
     
     # Create new apps from the data
     for i in json_dict['apps']:
@@ -132,16 +113,12 @@ def load() -> list[App]:
 
 def save() -> None:
     apps = currently_running_apps + not_running_apps
-    json_list: list[str] = []
+    json_list: list[str] = [i.onSave() for i in apps]
 
-    for i in apps:
-        json_list.append(i.onSave())
-
-    obj = {
+    # Convert the dict to a string
+    json_str = json.dumps({
         "apps": json_list,
-    }
-    # Convert the sict to a string
-    json_str = json.dumps(obj)
+    })
 
     # Write the data to the json file
     with open(JSON_FILE_PATH, 'w') as f:
@@ -151,13 +128,12 @@ def save() -> None:
 def update(q: Queue) -> None:
     import pywinctl
 
-    def getAllAppsNames():
+    def getAllAppsNames() -> list[str]:
         # Get all running apps names
         apps_names = pywinctl.getAllAppsNames()
 
-        # Remove the .exe from the apps
-        for i in range(len(apps_names)):
-            apps_names[i] = apps_names[i].replace(".exe", "")
+        # Remove the ".exe" from all apps names
+        apps_names = [i.replace(".exe", "") for i in apps_names]
 
         return apps_names
 
@@ -169,19 +145,47 @@ def update(q: Queue) -> None:
             "running": running,
         }))
 
+    def removeAppFromCurrrentlyRunningApps(i: App) -> None:
+        i.onKill()
+        currently_running_apps.remove(i)
+        not_running_apps.append(i)
+
+    def removeAppFromNotRunningApps(i: App) -> None:
+        currently_running_apps.append(i)
+        not_running_apps.remove(i)
+        i.resume()  
+
+        # Add a running app
+        addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
+
+    j = 0
     while True:
+        if j % SAVE_RATE == 0:
+            save()
+            j = 0
+
         q.queue.clear()
 
         apps = getAllAppsNames()
         # Clear the apps array
         apps_array = []
 
+        try:
+            # Apps that are neither in the currently running apps nor in the not running apps
+            new_apps = [i for i in apps if (not i in ([j.name for j in currently_running_apps] or [j.name for j in not_running_apps]))]
+        except TypeError:
+            new_apps = apps
+
+        # Create a new App class for all the new apps
+        for i in new_apps:
+            app = App(i)
+            app.start()
+            currently_running_apps.append(app)
+
         for i in currently_running_apps:
             # If the app doesn't exist anymore (it got closed) remove it from the currently running apps and add it to the not running apps
             if not i.name in apps:
-                i.onKill()
-                currently_running_apps.remove(i)
-                not_running_apps.append(i)
+                removeAppFromCurrrentlyRunningApps(i)
 
                 # Add a not running app
                 addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
@@ -189,32 +193,24 @@ def update(q: Queue) -> None:
                 # Add a running app
                 addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
 
-        for i in not_running_apps:
+        for k in not_running_apps:
             # If the app exists in apps (it has been reopened) remove it from the not running apps and add it to the currently running apps
-            if i.name in apps:
-                currently_running_apps.append(i)
-                not_running_apps.remove(i)
-                i.resume()
+            if k.name in apps:
+                removeAppFromNotRunningApps(k)
 
                 # Add a running app
-                addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
-
+                addAppToArray(k.name, k.total_time_running + k.timer.get(), k.timer.get(), True)
             else:
                 # Add a not running app
-                addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
-
-        # If it's a completly new app that is neither in the currently running apps nor in the not running apps, create a new app for it
-        for i in apps:
-            if (not i in ([j.name for j in currently_running_apps] or [j.name for j in not_running_apps])):
-                app = App(i)
-                app.start()
-                currently_running_apps.append(app)
-        
+                addAppToArray(k.name, k.total_time_running, k.timer.get(), False)
+    
         # Add the apps_aray to the queue
         q.put(apps_array)
 
         sleep(UPDATE_RATE)
-        
+
+        j += 1
+
 @flask_app.route("/screen-time", methods=['POST'])
 def home() -> dict:
     # While the update queue is empty, don't do anything
@@ -232,14 +228,15 @@ def home() -> dict:
 
     return payload
 
-
 if __name__ == '__main__':
     # Check if the save path exists
     checkSavePath()
     # Create the logger
     logger = createLogger()
 
-    checkIfScriptIsAlreadRunning()
+    if checkIfScriptIsAlreadRunning(): 
+        logger.error("Script is already running. Exitting now")
+        sys.exit(0)
 
     # Load data from the json file
     currently_running_apps = load()
@@ -248,18 +245,10 @@ if __name__ == '__main__':
     computer_uptime.start()
 
     # Create a thread for the update
-    update_thread = threading.Thread(target=update, args=(update_queue,), daemon=True)
-    # Start the thread
-    update_thread.start()
-
-    # Start the Flask app
+    threading.Thread(target=update, args=(update_queue,), daemon=True).start()
+    # Run the flask app
     flask_app.run(port=FLASK_PORT)
 
-    # Save the data to the json file
+    # Only used when testing when Ctrl+C is pressed
     save()
-
-    # Remove the lock that prevents other scripts from running
-    removeScriptLock()
-    
-    # Run sys.exit() after 1.0 seconds
-    threading.Timer(1.0, exit()).start()
+    sys.exit(0)
