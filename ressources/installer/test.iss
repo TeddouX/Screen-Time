@@ -53,8 +53,8 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 ; Create desktop icon
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 ; Make the exe run on startup
-Name: "{autostartup}\Screen Time Flask Server.exe"; Filename: "{app}\python\Screen Time Flask Server.exe"
+Name: "{autostartup}\Screen Time.exe"; Filename: "{app}\python\Screen Time.exe"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-
+Filename: "{app}\python\Screen Time.exe" 
