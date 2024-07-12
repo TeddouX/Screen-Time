@@ -57,4 +57,4 @@ Name: "{autostartup}\Screen Time.exe"; Filename: "{app}\python\Screen Time.exe"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\python\Screen Time.exe" 
+Filename: "{app}\python\Screen Time.exe"; Flags: nowait 
