@@ -1,6 +1,6 @@
 # Screen Time
 
-A program used to measure time that you spent on other apps
+A program used to measure time that you spent on other apps. <br>WINDOWS ONLY!!
 
 
 ## Features
