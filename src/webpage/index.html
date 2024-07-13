@@ -11,6 +11,7 @@
     <div class="tab-buttons-container">
         <button class="tab-button-active" id="screenTimeButton">Screen Time</button>
         <button class="tab-button-unactive" id="moreButton">More</button>
+        <button class="tab-button-unactive" id="settingsButton">Settings</button>
     </div>
 
     <div class="tabs-container">
@@ -18,27 +19,22 @@
             <div class="tab-container">
                 <span class="tab-title">Screen Time</span><br>
                 <span class="computer-uptime-text" id="computerUptime">Computer uptime: 00:00:00</span>
-
-                <div id="screenTimeWidgetsContainer" class="widgets-container">
-                    
-                </div>
+                <div id="screenTimeWidgetsContainer" class="widgets-container"></div>
             </div>
         </div>
         
         <div class="tab" id="moreTab" style="display: none;">
             <div class="tab-container">
                 <span class="tab-title">Total Screen Time</span>
-                <div id="totalScreenTimeWidgetsContainer" class="widgets-container">
-                    
-                </div>
-                
+                <div id="totalScreenTimeWidgetsContainer" class="widgets-container"></div>
                 <span class="tab-title">Hidden</span>
-                <div id="hiddenWidgetsContainer" class="widgets-container">
-                    <div class="deleted-widget">
-                        <span class="app-name">electron (electron)</span>
-                        <button class="restore-button"><span>Restore</span></button>
-                    </div>
-                </div>
+                <div id="hiddenWidgetsContainer" class="widgets-container"></div>
+            </div>
+        </div>
+
+        <div class="tab" id="settingsTab" style="display: none;">
+            <div class="tab-container">
+                <span class="tab-title">Settings</span>
             </div>
         </div>
     </div>

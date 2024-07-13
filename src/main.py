@@ -1,11 +1,14 @@
 import logging
-import threading
 import json
 import os
 import sys
 import time
 import psutil
+import win32gui, win32con, win32api, win32process
 
+# netstat -ano -p TCP IF THE PYTHON SCRIPT CAN'T START
+
+from typing import Callable
 from flask import Flask
 from app import App, Timer
 from queue import Queue
@@ -13,23 +16,22 @@ from time import sleep
 from click import unstyle
 
 # Format for the logger
-FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+FORMAT = "%(asctime)s %(levelname)s: %(message)s"
 
 # The update rate
 UPDATE_RATE = 2
 
 # The saving rate
-SAVE_RATE = round(10 / UPDATE_RATE) # Every n seconds
+SAVE_RATE = round(20 / UPDATE_RATE) # Every n seconds
 
 # The app's name (maybe for later :shrug:)
 APP_NAME = "Screen Time.exe"
 
 # Save path in the appdata
-SAVE_PATH = os.environ['APPDATA'] + "/Screen Time/python/"
+SAVE_PATH = os.environ["APPDATA"] + "/Screen Time/python/"
 # All the save paths
-JSON_FILE_PATH = SAVE_PATH + 'saved.json'
-LOCK_FILE_PATH = SAVE_PATH + 'lock.txt'
-LOGS_FILE_PATH = SAVE_PATH + 'logs.log'
+JSON_FILE_PATH = SAVE_PATH + "saved.json"
+LOGS_FILE_PATH = SAVE_PATH + "logs.log"
 
 # Variables
 computer_uptime = Timer()
@@ -45,6 +47,8 @@ FLASK_PORT = 8080
 # A queue yo use inter-thread communication
 update_queue = Queue(1)
 
+num_iterations = 0
+
 # A filter for the logger to remove the color from the logs
 class RemoveColorFilter(logging.Filter):
     def filter(self, record) -> bool:
@@ -54,7 +58,7 @@ class RemoveColorFilter(logging.Filter):
         return True
     
 def checkIfScriptIsAlreadRunning() -> bool:
-    for i in psutil.net_connections():
+    for i in psutil.net_connections("inet4"):
         # Check if the port is already in use
         if i.laddr.ip == "127.0.0.1" and i.laddr.port == FLASK_PORT:
             return True
@@ -85,12 +89,12 @@ def load() -> list[App]:
 
     try:
         # Get data from json file
-        with open(JSON_FILE_PATH, 'r+') as f:
+        with open(JSON_FILE_PATH, "r+") as f:
             json_str = f.read()
     except FileNotFoundError:
         logger.info("The json save file doesn't exist. Creating it now and skipping the loading of the data.")
         # Create a new json file
-        open(JSON_FILE_PATH, 'x')
+        open(JSON_FILE_PATH, "x")
 
         return []
 
@@ -102,7 +106,7 @@ def load() -> list[App]:
         return []
     
     # Create new apps from the data
-    for i in json_dict['apps']:
+    for i in json_dict["apps"]:
         app = App.from_json(json.loads(i))
         app.start()
         apps.append(app)
@@ -110,6 +114,87 @@ def load() -> list[App]:
     logger.info("Successfully loaded the json save file.")
 
     return apps
+
+def test(func: Callable):
+    t0 = time.time()
+
+    try: result = func()
+    except TypeError: 
+        func()
+        result = None
+
+    t1 = time.time()
+
+    print(t1 - t0)
+
+    return result
+
+def getFriendlyName(path: str) -> str:
+    # https://stackoverflow.com/a/14822821
+    file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\040904b0\FileDescription")
+
+    if file_desc == None: 
+        file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\000004b0\FileDescription")
+
+    if file_desc == "":
+        file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\040904b0\ProductName")
+
+        if file_desc == None: 
+                file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\000004b0\ProductName")
+
+    return file_desc
+
+def getAppNameAndPid(hwnd):
+    try:
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        process = psutil.Process(pid)
+        return process.name(), pid
+    except Exception as e:
+        return None, None
+
+def isRealWindow(hwnd):
+    if not win32gui.IsWindowVisible(hwnd):
+        return False
+    if win32gui.GetParent(hwnd) != 0:
+        return False
+    if win32gui.GetWindowText(hwnd) == "":
+        return False
+    if win32gui.GetWindow(hwnd, win32con.GW_OWNER) != 0:
+        return False
+    if (win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) & win32con.WS_EX_TOOLWINDOW):
+        return False
+    if (win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE) & win32con.WS_POPUP):
+        return False
+    return True
+
+def getVisibleWindows():
+    def callback(hwnd, windows):
+        if isRealWindow(hwnd):
+            windows.append(hwnd)
+
+        return True
+
+    windows = []
+
+    win32gui.EnumWindows(callback, windows)
+
+    return windows
+
+def getAllAppsNames():
+    visible_windows = getVisibleWindows()
+    apps: list[str] = []
+
+    for hwnd in visible_windows:
+        app_name, pid = getAppNameAndPid(hwnd)
+
+        if app_name:
+            exe_path = psutil.Process(pid).exe()
+            real_app_name = getFriendlyName(exe_path)
+
+            apps.append(real_app_name)
+
+    return apps 
+
 
 def save() -> None:
     apps = currently_running_apps + not_running_apps
@@ -121,21 +206,13 @@ def save() -> None:
     })
 
     # Write the data to the json file
-    with open(JSON_FILE_PATH, 'w') as f:
+    with open(JSON_FILE_PATH, "w") as f:
         f.write(json_str)
         logger.info(f"Successfully saved the json data to: {JSON_FILE_PATH}")
 
-def update(q: Queue) -> None:
-    import pywinctl
-
-    def getAllAppsNames() -> list[str]:
-        # Get all running apps names
-        apps_names = pywinctl.getAllAppsNames()
-
-        # Remove the ".exe" from all apps names
-        apps_names = [i.replace(".exe", "") for i in apps_names]
-
-        return apps_names
+def update() -> None:
+    global apps_array
+    global num_iterations
 
     def addAppToArray(name: str, total_uptime: float, current_uptime: float, running: bool) -> None:
         apps_array.append(json.dumps({
@@ -147,78 +224,57 @@ def update(q: Queue) -> None:
 
     def removeAppFromCurrrentlyRunningApps(i: App) -> None:
         i.onKill()
+
         currently_running_apps.remove(i)
         not_running_apps.append(i)
 
     def removeAppFromNotRunningApps(i: App) -> None:
         currently_running_apps.append(i)
         not_running_apps.remove(i)
-        i.resume()  
 
-        # Add a running app
-        addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
+        i.resume()
 
-    j = 0
-    while True:
-        if j % SAVE_RATE == 0:
-            save()
-            j = 0
+    if num_iterations % SAVE_RATE == 0 and num_iterations != 0:
+        save()
 
-        q.queue.clear()
+    apps = getAllAppsNames()
+    
+    # Clear the apps array
+    apps_array = []
 
-        apps = getAllAppsNames()
-        # Clear the apps array
-        apps_array = []
-
-        try:
-            # Apps that are neither in the currently running apps nor in the not running apps
-            new_apps = [i for i in apps if (not i in ([j.name for j in currently_running_apps] or [j.name for j in not_running_apps]))]
-        except TypeError:
-            new_apps = apps
-
-        # Create a new App class for all the new apps
-        for i in new_apps:
+    for i in apps:
+        if not (i in [i.name for i in currently_running_apps]) and not (i in [i.name for i in not_running_apps]):
             app = App(i)
             app.start()
+
             currently_running_apps.append(app)
 
-        for i in currently_running_apps:
-            # If the app doesn't exist anymore (it got closed) remove it from the currently running apps and add it to the not running apps
-            if not i.name in apps:
-                removeAppFromCurrrentlyRunningApps(i)
+    for i in currently_running_apps:
+        # If the app doesn't exist anymore (it got closed) remove it from the currently running apps and add it to the not running apps
+        if not i.name in apps:
+            removeAppFromCurrrentlyRunningApps(i)
 
-                # Add a not running app
-                addAppToArray(i.name, i.total_time_running, i.timer.get(), False)
-            else:
-                # Add a running app
-                addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
+            # Don't need to add it to the apps_array because it will get added by the next for loop
+        else:
+            # Add a running app
+            addAppToArray(i.name, i.total_time_running + i.timer.get(), i.timer.get(), True)
 
-        for k in not_running_apps:
-            # If the app exists in apps (it has been reopened) remove it from the not running apps and add it to the currently running apps
-            if k.name in apps:
-                removeAppFromNotRunningApps(k)
+    for k in not_running_apps:
+        # If the app exists in apps (it has been reopened) remove it from the not running apps and add it to the currently running apps
+        if k.name in apps:
+            removeAppFromNotRunningApps(k)
 
-                # Add a running app
-                addAppToArray(k.name, k.total_time_running + k.timer.get(), k.timer.get(), True)
-            else:
-                # Add a not running app
-                addAppToArray(k.name, k.total_time_running, k.timer.get(), False)
-    
-        # Add the apps_aray to the queue
-        q.put(apps_array)
+            # Add a running app
+            addAppToArray(k.name, k.total_time_running + k.timer.get(), k.timer.get(), True)
+        else:
+            # Add a not running app
+            addAppToArray(k.name, k.total_time_running, 0, False)
 
-        sleep(UPDATE_RATE)
+    num_iterations += 1
 
-        j += 1
-
-@flask_app.route("/screen-time", methods=['POST'])
+@flask_app.route("/screen-time", methods=["POST"])
 def home() -> dict:
-    # While the update queue is empty, don't do anything
-    while not update_queue.full():
-        pass
-
-    # Set the apps_array to the contents of the queue
-    apps_array = update_queue.get()
+    update()
 
     # Create the payload that gets sent back
     payload = {
@@ -228,7 +284,10 @@ def home() -> dict:
 
     return payload
 
-if __name__ == '__main__':
+def main() -> None:
+    global logger
+    global currently_running_apps
+
     # Check if the save path exists
     checkSavePath()
     # Create the logger
@@ -244,11 +303,12 @@ if __name__ == '__main__':
     # Start the computer uptime time
     computer_uptime.start()
 
-    # Create a thread for the update
-    threading.Thread(target=update, args=(update_queue,), daemon=True).start()
     # Run the flask app
     flask_app.run(port=FLASK_PORT)
 
     # Only used when testing when Ctrl+C is pressed
     save()
     sys.exit(0)
+
+if __name__ == "__main__":
+    main()

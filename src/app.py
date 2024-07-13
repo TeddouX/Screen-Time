@@ -68,12 +68,20 @@ class App:
 
     def onSave(self) -> str:
         # Save the total time running
-        self.total_time_running += self.timer.get()
+        if self.timer.paused:
+            total_time_running = self.total_time_running
+        else:
+            total_time_running = self.total_time_running + self.timer.get()
 
-        return self.__json__()
+        return self.__json__(total_time_running)
 
-    def __json__(self) -> str:
-        return dumps(self, default=lambda o: o.__dict__)
+    def __json__(self, total_time_running) -> str:
+        json_dict = {
+            "name": self.name,
+            "total_time_running": total_time_running
+        }
+
+        return dumps(json_dict)
 
     @staticmethod
     def from_json(json_dict: dict):

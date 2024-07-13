@@ -4,7 +4,10 @@ const totalScreenTimeContainer = document.getElementById("totalScreenTimeWidgets
 const computerUptimeText = document.getElementById("computerUptime");
 const screenTimeButton = document.getElementById("screenTimeButton");
 const moreButton = document.getElementById("moreButton");
+const settingsButton = document.getElementById("settingsButton");
 const screenTimeTab = document.getElementById("screenTimeTab");
+const moreTab = document.getElementById("moreTab");
+const settingsTab = document.getElementById("settingsTab");
 const promptContainer = document.getElementById("promptContainer");
 const promptBackground = document.getElementById("promptBackground");
 const confirmPrompt = document.getElementById("confirmPrompt");
@@ -12,13 +15,15 @@ const textPrompt = document.getElementById("textPrompt");
 const hiddenWidgetsContainer = document.getElementById("hiddenWidgetsContainer");
 
 // Variables
-let appsDisplayNames = {};
+let appsDisplayNames = [];
 let hiddenApps = [];
 let currentlyRunningApps = [];
 let notRunningApps = [];
 let computerUptime = 0;
 let biggestTotalScreenTime = 0;
 let biggestCurrentScreenTime = 0;
+let currentTab = screenTimeTab;
+let currentButton = screenTimeButton;
 let supportsPassive = false;
 
 // Test if the browser supports passive
@@ -32,27 +37,51 @@ try {
 let wheelOpt = supportsPassive ? { passive: false } : false;
 let wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel';
 
+// Settings tab
+settingsButton.addEventListener("click", () => {
+    // If the current tab is already the settings tab
+    if(currentTab == settingsTab) return;
+   
+    // Make the settings button selected
+    settingsButton.className = getOppositeTabButtonClass(settingsButton.className);
+    // Make the current button unselected
+    currentButton.className = getOppositeTabButtonClass(currentButton.className);
 
-// If the button is clicked set it to the opposite state
-screenTimeButton.addEventListener("click", () => {
-    if (screenTimeButton.className === "tab-button-active") return;
-
-    moreButton.className = getOppositeTabButtonClass(moreButton.className);
-    screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
-
-    moreTab.style.display = "none";
-    screenTimeTab.style.display = "flex";
+    // Hide the current tab
+    currentTab.style.display = "none";
+    // Show the settings tab
+    settingsTab.style.display = "flex";
+    
+    currentButton = settingsButton;
+    currentTab = settingsTab;
 });
 
-// If the button is clicked set it to the opposite state
+// Screen time tab
+screenTimeButton.addEventListener("click", () => {
+    if(currentTab == screenTimeTab) return;
+   
+    screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
+    currentButton.className = getOppositeTabButtonClass(currentButton.className);
+
+    currentTab.style.display = "none";
+    screenTimeTab.style.display = "flex";
+    
+    currentButton = screenTimeButton;
+    currentTab = screenTimeTab;
+});
+
+// More time tab
 moreButton.addEventListener("click", () => {
-    if (moreButton.className === "tab-button-active") return;
+    if(currentTab == moreTab) return;
 
     moreButton.className = getOppositeTabButtonClass(moreButton.className);
-    screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
+    currentButton.className = getOppositeTabButtonClass(currentButton.className);
 
-    screenTimeTab.style.display = "none";
+    currentTab.style.display = "none";
     moreTab.style.display = "flex";
+    
+    currentButton = moreButton;
+    currentTab = moreTab;
 });
 
 
@@ -69,6 +98,10 @@ String.prototype.toHHMMSS = function() {
 
     return hours + ':' + minutes + ':' + seconds;
 };
+
+function truncate(str, n) {
+    return (str.length > n) ? str.slice(0, n-1) + '...' : str;
+}
 
 // left: 37, up: 38, right: 39, down: 40,
 // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
@@ -136,23 +169,7 @@ function sortByTotalUptime(a, b) {
     return 0;
 }
 
-function updateHiddenApps() {
-    // Iterate through the hidddenApps
-    for (let i = 0; i < hiddenApps.length; i++) {
-        const appName = hiddenApps[i];
-        let displayName = capitalizeFirstLetter(appName);
-
-        // If the app has a display name, set it
-        for(let i = 0; i < appsDisplayNames.length; i++) {
-            if(appsDisplayNames[i].appName == appName) displayName = appsDisplayNames[i].displayName;
-        }
-
-        // Add a new hidden widget to the hiddenWidgetsContainer element
-        hiddenWidgetsContainer.appendChild(createHiddenWidget(appName, displayName));
-    }
-}
-
-function promptText(title) {
+function promptText(question) {
     // Used querySelector() to get the element under (in the html hierarchy) the textPrompt
     const confirmButton = textPrompt.querySelector(".confirm-button");
     const cancelButton = textPrompt.querySelector(".cancel-button");
@@ -166,8 +183,7 @@ function promptText(title) {
     promptContainer.style = "display: flex;";
     textPrompt.style = "display: flex;";
 
-    // Set the prompt title
-    textPrompt.querySelector(".prompt-title").innerText = title;
+    textPrompt.querySelector(".prompt-title").innerText = question, 25;
 
     confirmButton.onclick = () => { 
         // Can't confirm if the text is empty (maybe add something to indicate that later)
@@ -207,7 +223,7 @@ function promptText(title) {
     })
 }   
 
-function promptConfirm(title) {
+function promptConfirm(question) {
     // Used querySelector() to get the element under (in the html hierarchy) the confirmPrompt
     const confirmButton = confirmPrompt.querySelector(".confirm-button");
     const cancelButton = confirmPrompt.querySelector(".cancel-button");
@@ -220,8 +236,7 @@ function promptConfirm(title) {
     promptContainer.style = "display: flex;";
     confirmPrompt.style = "display: flex;";
 
-    // Set the prompt title
-    confirmPrompt.querySelector(".prompt-title").innerText = title;
+    confirmPrompt.querySelector(".prompt-title").innerText = question, 25;
 
     confirmButton.onclick = () => { 
         // Hide everything
@@ -257,15 +272,12 @@ function promptConfirm(title) {
 }
 
 async function renameApp(appName) {
-    let res = await promptText(`Type in a new name for ${appName}`);
+    let res = await promptText(`Type in a new name for ${truncate(appName)}`);
 
     // If the res is nothing (the user canceled), return
     if(res === "") {
         return;
     }
-
-    // Add the new app display name to the array
-    appsDisplayNames[appName] = res;
 
     // Send the new app display name
     window.electronAPI.addAppDisplayName({ 
@@ -275,7 +287,7 @@ async function renameApp(appName) {
 }
 
 async function deleteApp(appName) {
-    let res = await promptConfirm(`Are you sure that you want to hide ${appName}`);
+    let res = await promptConfirm(`Are you sure that you want to hide ${truncate(appName)}`);
 
     // If the user confirmed
     if(res) {
@@ -287,12 +299,13 @@ async function deleteApp(appName) {
 }
 
 async function restoreApp(appName) {
-    let res = await promptConfirm(`Are you sure that you want to restore ${appName}`);
+    let res = await promptConfirm(`Are you sure that you want to restore ${truncate(appName, 25)}`);
     
     // If the user confirmed
     if(res) {
         // Remove the app from the hidden apps array
         hiddenApps.splice(hiddenApps.indexOf(appName), 1);
+        
         window.electronAPI.removeHiddenApp(appName);
     }
 }
@@ -373,7 +386,7 @@ function createHiddenWidget(name, appDisplayName) {
 
     // HTML for the widget (filled in with the data)
     let deletedWidgetHTML = `
-        <span class="app-name">${appDisplayName}</span>
+        <span class="app-name" ${appDisplayName.length > 25 ? "title=" + appDisplayName : ""}>${truncate(appDisplayName, 25)}</span>
         <button class="restore-button" onclick="restoreApp('${name}')"><span>Restore</span></button>
     `;
 
@@ -406,7 +419,20 @@ async function update() {
     totalScreenTimeContainer.innerHTML = "";
     hiddenWidgetsContainer.innerHTML = "";
 
-    updateHiddenApps();
+
+    // Iterate through the hidddenApps
+    for (let i = 0; i < hiddenApps.length; i++) {
+        const appName = hiddenApps[i];
+        let displayName = capitalizeFirstLetter(appName);
+
+        // If the app has a display name, set it
+        for(let i = 0; i < appsDisplayNames.length; i++) {
+            if(appsDisplayNames[i].appName == appName) displayName = appsDisplayNames[i].displayName;
+        }
+
+        // Add a new hidden widget to the hiddenWidgetsContainer element
+        hiddenWidgetsContainer.appendChild(createHiddenWidget(appName, displayName));
+    }
 
     // Iterate through all the currrently running apps
     for (let i = 0; i < currentlyRunningApps.length; i++) {
@@ -418,7 +444,10 @@ async function update() {
 
         // If the app has a custom display name, set it
         for(let i = 0; i < appsDisplayNames.length; i++) {
-            if(appsDisplayNames[i].appName == app.name) displayName = appsDisplayNames[i].displayName;
+            if(appsDisplayNames[i].appName == app.name) {
+                displayName = appsDisplayNames[i].displayName
+                console.log("hhhhhh");
+            };
         }
 
         // Add a new current screen time widget to the currentlyRunningAppsContainer element

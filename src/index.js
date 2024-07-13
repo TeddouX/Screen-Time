@@ -13,7 +13,7 @@ const url = '127.0.0.1';
 const port = 8080;
 const urlPath = '/screen-time';
 const jsonFilePath = process.env.APPDATA + "/Screen Time/js/"
-const updateRate = 2000;
+const updateRate = 4000;
 
 let currentlyRunningApps = [];
 let notRunningApps = [];
@@ -50,7 +50,7 @@ const createWindow = () => {
         }
     });
   
-    win.loadFile('./src/webpage/index.html');
+    win.loadFile('./webpage/index.html');
 };
 
 function getApps() {
@@ -238,11 +238,10 @@ function addHiddenApp(_event, app) {
 }
 
 function addAppDisplayName(_event, app) {
-    for (let i = 0; i < appsDisplayNames.length; i++) {
-        // If the displayName is the same return
-        if(appsDisplayNames[i].displayName == app.displayName) return;
-
+    for (let i = 0; i < appsDisplayNames.length; i++) {  
         if(appsDisplayNames[i].appName == app.appName) {
+            if(appsDisplayNames[i].displayName == app.displayName) return;
+
             // Set the displayName if the app already exists
             appsDisplayNames[i].displayName = app.displayName;
             

@@ -38,7 +38,7 @@ WizardStyle=modern
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Setup]
-AlwaysRestart = yes
+MissingRunOnceIdsWarning = no
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -57,4 +57,8 @@ Name: "{autostartup}\Screen Time.exe"; Filename: "{app}\python\Screen Time.exe"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\python\Screen Time.exe"; Flags: nowait 
+Filename: "{app}\python\Screen Time.exe"; Flags: nowait
+
+[UninstallRun]
+; Kill the python script else the uninstaller won't be able to delete the python exe
+Filename: "{cmd}"; Parameters: "/C ""taskkill /im {#MyAppExeName} /f /t" 
