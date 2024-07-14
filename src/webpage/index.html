@@ -9,9 +9,8 @@
 </head>
 <body>
     <div class="tab-buttons-container">
-        <button class="tab-button-active" id="screenTimeButton">Screen Time</button>
-        <button class="tab-button-unactive" id="moreButton">More</button>
-        <button class="tab-button-unactive" id="settingsButton">Settings</button>
+        <button class="tab-button-active" id="screenTimeButton" onclick="changeTab('screenTimeButton', 'screenTimeTab')">Screen Time</button>
+        <button class="tab-button-unactive" id="moreButton" onclick="changeTab('moreButton', 'moreTab')">More</button>
     </div>
 
     <div class="tabs-container">
@@ -27,14 +26,6 @@
             <div class="tab-container">
                 <span class="tab-title">Total Screen Time</span>
                 <div id="totalScreenTimeWidgetsContainer" class="widgets-container"></div>
-                <span class="tab-title">Hidden</span>
-                <div id="hiddenWidgetsContainer" class="widgets-container"></div>
-            </div>
-        </div>
-
-        <div class="tab" id="settingsTab" style="display: none;">
-            <div class="tab-container">
-                <span class="tab-title">Settings</span>
             </div>
         </div>
     </div>

@@ -4,19 +4,15 @@ const totalScreenTimeContainer = document.getElementById("totalScreenTimeWidgets
 const computerUptimeText = document.getElementById("computerUptime");
 const screenTimeButton = document.getElementById("screenTimeButton");
 const moreButton = document.getElementById("moreButton");
-const settingsButton = document.getElementById("settingsButton");
 const screenTimeTab = document.getElementById("screenTimeTab");
 const moreTab = document.getElementById("moreTab");
-const settingsTab = document.getElementById("settingsTab");
 const promptContainer = document.getElementById("promptContainer");
 const promptBackground = document.getElementById("promptBackground");
 const confirmPrompt = document.getElementById("confirmPrompt");
 const textPrompt = document.getElementById("textPrompt");
-const hiddenWidgetsContainer = document.getElementById("hiddenWidgetsContainer");
 
 // Variables
 let appsDisplayNames = [];
-let hiddenApps = [];
 let currentlyRunningApps = [];
 let notRunningApps = [];
 let computerUptime = 0;
@@ -37,52 +33,24 @@ try {
 let wheelOpt = supportsPassive ? { passive: false } : false;
 let wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel';
 
-// Settings tab
-settingsButton.addEventListener("click", () => {
-    // If the current tab is already the settings tab
-    if(currentTab == settingsTab) return;
-   
-    // Make the settings button selected
-    settingsButton.className = getOppositeTabButtonClass(settingsButton.className);
-    // Make the current button unselected
-    currentButton.className = getOppositeTabButtonClass(currentButton.className);
+function changeTab(buttonId, tabId) {
+    let tab = document.getElementById(tabId);
+    let button = document.getElementById(buttonId)
 
-    // Hide the current tab
-    currentTab.style.display = "none";
-    // Show the settings tab
-    settingsTab.style.display = "flex";
-    
-    currentButton = settingsButton;
-    currentTab = settingsTab;
-});
+    if(currentTab == tab) return;
 
-// Screen time tab
-screenTimeButton.addEventListener("click", () => {
-    if(currentTab == screenTimeTab) return;
-   
-    screenTimeButton.className = getOppositeTabButtonClass(screenTimeButton.className);
+    button.className = getOppositeTabButtonClass(button.className);
     currentButton.className = getOppositeTabButtonClass(currentButton.className);
 
     currentTab.style.display = "none";
-    screenTimeTab.style.display = "flex";
+    tab.style.display = "flex";
     
-    currentButton = screenTimeButton;
-    currentTab = screenTimeTab;
-});
+    currentButton = button;
+    currentTab = tab;
 
-// More time tab
-moreButton.addEventListener("click", () => {
-    if(currentTab == moreTab) return;
-
-    moreButton.className = getOppositeTabButtonClass(moreButton.className);
-    currentButton.className = getOppositeTabButtonClass(currentButton.className);
-
-    currentTab.style.display = "none";
-    moreTab.style.display = "flex";
-    
-    currentButton = moreButton;
-    currentTab = moreTab;
-});
+    updateNotRunningApps();
+    updateCurrentlyRunningApps();
+}
 
 
 // Add a function to the String class
@@ -286,30 +254,6 @@ async function renameApp(appName) {
     });
 }
 
-async function deleteApp(appName) {
-    let res = await promptConfirm(`Are you sure that you want to hide ${truncate(appName)}`);
-
-    // If the user confirmed
-    if(res) {
-        // Add the app to the hidden apps
-        hiddenApps.push(appName)
-        // Send the new hidden app to the index.js
-        window.electronAPI.addHiddenApp(appName);
-    }
-}
-
-async function restoreApp(appName) {
-    let res = await promptConfirm(`Are you sure that you want to restore ${truncate(appName, 25)}`);
-    
-    // If the user confirmed
-    if(res) {
-        // Remove the app from the hidden apps array
-        hiddenApps.splice(hiddenApps.indexOf(appName), 1);
-        
-        window.electronAPI.removeHiddenApp(appName);
-    }
-}
-
 function createCurrentScreenTimeWidget(appName, appDisplayName, time) {
     // Create a container div
     let currentScreenTimeWidget = document.createElement("div");
@@ -328,7 +272,6 @@ function createCurrentScreenTimeWidget(appName, appDisplayName, time) {
         <span class="app-name">${appDisplayName}</span>
 
         <button class="rename-button" onclick="renameApp('${appName}')"><img src="./assets/pencil.svg" alt="" width="20" height="20"></button>
-        <button class="delete-button" onclick="deleteApp('${appName}')"><img src="./assets/trash.svg" alt="" width="20" height="20"></button>
         <div class="break"></div>
 
         <div class="screen-time-progressbar-container">
@@ -359,7 +302,6 @@ function createTotalScreenTimeWidget(appName, appDisplayName, time, active) {
         <span class="app-name">${appDisplayName}</span>
 
         <button class="rename-button" onclick="renameApp('${appName}')"><img src="./assets/pencil.svg" alt="" width="20" height="20"></button>
-        <button class="delete-button" onclick="deleteApp('${appName}')"><img src="./assets/trash.svg" alt="" width="20" height="20"></button>
         <div class="break"></div>
 
         <div class="screen-time-progressbar-container">
@@ -379,26 +321,42 @@ function createTotalScreenTimeWidget(appName, appDisplayName, time, active) {
     return totalScreenTimeWidget;
 }
 
-function createHiddenWidget(name, appDisplayName) {
-    // Create a container div
-    let deletedWidget = document.createElement("div");
-    deletedWidget.className = 'deleted-widget';
+function updateNotRunningApps() {
+    // Iterate through all the not running apps
+    for (let i = 0; i < notRunningApps.length; i++) {
+        const app = notRunningApps[i];
+        let displayName = capitalizeFirstLetter(app.name);
 
-    // HTML for the widget (filled in with the data)
-    let deletedWidgetHTML = `
-        <span class="app-name" ${appDisplayName.length > 25 ? "title=" + appDisplayName : ""}>${truncate(appDisplayName, 25)}</span>
-        <button class="restore-button" onclick="restoreApp('${name}')"><span>Restore</span></button>
-    `;
+        // If the app has a custom display name, set it
+        for(let i = 0; i < appsDisplayNames.length; i++) {
+            if(appsDisplayNames[i].appName == app.name) displayName = appsDisplayNames[i].displayName;
+        }
 
-    // Set the innerHTML to the HTML created for the widget
-    deletedWidget.innerHTML = deletedWidgetHTML;
+        // Add a new total screen time widget to the totalScreenTimeContainer element
+        totalScreenTimeContainer.appendChild(createTotalScreenTimeWidget(app.name, displayName, app.total_uptime, app.running));
+    }
+}
 
-    return deletedWidget;
+function updateCurrentlyRunningApps() {
+    // Iterate through all the currrently running apps
+    for (let i = 0; i < currentlyRunningApps.length; i++) {
+        const app = currentlyRunningApps[i];
+        let displayName = capitalizeFirstLetter(app.name);
+
+        // If the app has a custom display name, set it
+        for(let i = 0; i < appsDisplayNames.length; i++) {
+            if(appsDisplayNames[i].appName == app.name) {
+                displayName = appsDisplayNames[i].displayName;
+            };
+        }
+
+        // Add a new current screen time widget to the currentlyRunningAppsContainer element
+        currentlyRunningAppsContainer.appendChild(createCurrentScreenTimeWidget(app.name, displayName, app.current_uptime));
+    }
 }
 
 async function update() {
     // Get all the data from the index.js using the electron api (go see docs: https://www.electronjs.org/docs/latest/tutorial/ipc)
-    hiddenApps = await window.electronAPI.getHiddenApps();
     appsDisplayNames = await window.electronAPI.getAppsDisplayNames();
     currentlyRunningApps = await window.electronAPI.getRunningApps();
     notRunningApps = await window.electronAPI.getNotRunningApps();
@@ -417,58 +375,11 @@ async function update() {
     // Clear the widgets containers
     currentlyRunningAppsContainer.innerHTML = "";
     totalScreenTimeContainer.innerHTML = "";
-    hiddenWidgetsContainer.innerHTML = "";
 
-
-    // Iterate through the hidddenApps
-    for (let i = 0; i < hiddenApps.length; i++) {
-        const appName = hiddenApps[i];
-        let displayName = capitalizeFirstLetter(appName);
-
-        // If the app has a display name, set it
-        for(let i = 0; i < appsDisplayNames.length; i++) {
-            if(appsDisplayNames[i].appName == appName) displayName = appsDisplayNames[i].displayName;
-        }
-
-        // Add a new hidden widget to the hiddenWidgetsContainer element
-        hiddenWidgetsContainer.appendChild(createHiddenWidget(appName, displayName));
-    }
-
-    // Iterate through all the currrently running apps
-    for (let i = 0; i < currentlyRunningApps.length; i++) {
-        const app = currentlyRunningApps[i];
-        let displayName = capitalizeFirstLetter(app.name);
-
-        // If the app is in the hidden apps, skip it
-        if(hiddenApps.includes(app.name)) continue;
-
-        // If the app has a custom display name, set it
-        for(let i = 0; i < appsDisplayNames.length; i++) {
-            if(appsDisplayNames[i].appName == app.name) {
-                displayName = appsDisplayNames[i].displayName
-                console.log("hhhhhh");
-            };
-        }
-
-        // Add a new current screen time widget to the currentlyRunningAppsContainer element
-        currentlyRunningAppsContainer.appendChild(createCurrentScreenTimeWidget(app.name, displayName, app.current_uptime));
-    }
-
-    // Iterate through all the not running apps
-    for (let i = 0; i < notRunningApps.length; i++) {
-        const app = notRunningApps[i];
-        let displayName = capitalizeFirstLetter(app.name);
-
-        // If the app is in the hidden apps, skip it
-        if(hiddenApps.includes(app.name)) continue;
-
-        // If the app has a custom display name, set it
-        for(let i = 0; i < appsDisplayNames.length; i++) {
-            if(appsDisplayNames[i].appName == app.name) displayName = appsDisplayNames[i].displayName;
-        }
-
-        // Add a new total screen time widget to the totalScreenTimeContainer element
-        totalScreenTimeContainer.appendChild(createTotalScreenTimeWidget(app.name, displayName, app.total_uptime, app.running));
+    if(currentTab == moreTab) {
+        updateNotRunningApps();
+    } else if(currentTab == screenTimeTab) {
+        updateCurrentlyRunningApps();
     }
 }
 

@@ -4,25 +4,20 @@ import os
 import sys
 import time
 import psutil
+import threading
 import win32gui, win32con, win32api, win32process
-
-# netstat -ano -p TCP IF THE PYTHON SCRIPT CAN'T START
 
 from typing import Callable
 from flask import Flask
 from app import App, Timer
 from queue import Queue
-from time import sleep
 from click import unstyle
 
 # Format for the logger
 FORMAT = "%(asctime)s %(levelname)s: %(message)s"
 
-# The update rate
-UPDATE_RATE = 2
-
 # The saving rate
-SAVE_RATE = round(20 / UPDATE_RATE) # Every n seconds
+SAVE_RATE = 20.0 # In seconds
 
 # The app's name (maybe for later :shrug:)
 APP_NAME = "Screen Time.exe"
@@ -47,7 +42,6 @@ FLASK_PORT = 8080
 # A queue yo use inter-thread communication
 update_queue = Queue(1)
 
-num_iterations = 0
 
 # A filter for the logger to remove the color from the logs
 class RemoveColorFilter(logging.Filter):
@@ -131,24 +125,24 @@ def test(func: Callable):
 
 def getFriendlyName(path: str) -> str:
     # https://stackoverflow.com/a/14822821
-    file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\040904b0\FileDescription")
-
-    if file_desc == None: 
-        file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\000004b0\FileDescription")
-
-    if file_desc == "":
-        file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\040904b0\ProductName")
-
-        if file_desc == None: 
-                file_desc = win32api.GetFileVersionInfo(path, r"StringFileInfo\000004b0\ProductName")
+    try:
+        language, codepage = win32api.GetFileVersionInfo(path, '\\VarFileInfo\\Translation')[0]
+        file_desc = win32api.GetFileVersionInfo(path, fr'\StringFileInfo\{language:04X}{codepage:04X}\FileDescription')
+    except Exception as _:
+        file_desc = None
+        
+    if file_desc == None:
+        exe_name = os.path.split(path)[1] # Get the exe name
+        file_desc = os.path.splitext(exe_name)[0] # Get the exe without it's extension
 
     return file_desc
 
 def getAppNameAndPid(hwnd):
     try:
         _, pid = win32process.GetWindowThreadProcessId(hwnd)
-        process = psutil.Process(pid)
-        return process.name(), pid
+        name = psutil.Process(pid).name()
+
+        return name, pid
     except Exception as e:
         return None, None
 
@@ -176,6 +170,7 @@ def getVisibleWindows():
 
     windows = []
 
+    # Get all the hwnd (handle to a window)
     win32gui.EnumWindows(callback, windows)
 
     return windows
@@ -195,8 +190,9 @@ def getAllAppsNames():
 
     return apps 
 
-
 def save() -> None:
+    global save_timer
+
     apps = currently_running_apps + not_running_apps
     json_list: list[str] = [i.onSave() for i in apps]
 
@@ -210,9 +206,12 @@ def save() -> None:
         f.write(json_str)
         logger.info(f"Successfully saved the json data to: {JSON_FILE_PATH}")
 
+    save_timer = threading.Timer(SAVE_RATE, save)
+    save_timer.daemon = True
+    save_timer.start()
+
 def update() -> None:
     global apps_array
-    global num_iterations
 
     def addAppToArray(name: str, total_uptime: float, current_uptime: float, running: bool) -> None:
         apps_array.append(json.dumps({
@@ -233,9 +232,6 @@ def update() -> None:
         not_running_apps.remove(i)
 
         i.resume()
-
-    if num_iterations % SAVE_RATE == 0 and num_iterations != 0:
-        save()
 
     apps = getAllAppsNames()
     
@@ -270,8 +266,6 @@ def update() -> None:
             # Add a not running app
             addAppToArray(k.name, k.total_time_running, 0, False)
 
-    num_iterations += 1
-
 @flask_app.route("/screen-time", methods=["POST"])
 def home() -> dict:
     update()
@@ -287,6 +281,7 @@ def home() -> dict:
 def main() -> None:
     global logger
     global currently_running_apps
+    global save_timer
 
     # Check if the save path exists
     checkSavePath()
@@ -303,11 +298,16 @@ def main() -> None:
     # Start the computer uptime time
     computer_uptime.start()
 
+    save_timer = threading.Timer(SAVE_RATE, save)
+    save_timer.daemon = True
+    save_timer.start()
+
     # Run the flask app
     flask_app.run(port=FLASK_PORT)
 
     # Only used when testing when Ctrl+C is pressed
     save()
+
     sys.exit(0)
 
 if __name__ == "__main__":

@@ -139,18 +139,7 @@ body {
 .rename-button {
     display: flex;
     margin-left: auto;
-    margin-right: 6px;
-    padding: 0px;
-    width: 30px;
-    height: 30px;
-    justify-content: center;
-    align-items: center;
-    border: #cecece;
-    border-radius: 4px;
-}
-
-.delete-button {
-    display: flex;
+    margin-right: 0px;
     padding: 0px;
     width: 30px;
     height: 30px;
@@ -161,7 +150,6 @@ body {
 }
 
 .restore-button:hover,
-.delete-button:hover,
 .rename-button:hover,
 .confirm-button:hover, 
 .cancel-button:hover,
@@ -170,7 +158,6 @@ body {
 }
 
 .restore-button:active,
-.delete-button:active,
 .rename-button:active,
 .confirm-button:active, 
 .cancel-button:active,
@@ -192,18 +179,6 @@ body {
     height: 12px;
     width: 75%;
     border-radius: 3px;
-}
-
-.deleted-widget {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    background-color: #272727;
-    box-sizing: border-box;
-    margin-top: 10px;
-    border-radius: 4px;
-    padding: 10px;
-    width: 100%;
 }
 
 .restore-button {
@@ -271,7 +246,7 @@ body {
     height: 30px;
     justify-content: center;
     align-items: center;
-    border: #F0F0F0;
+    border: #cecece;
     border-radius: 4px;
 }
 

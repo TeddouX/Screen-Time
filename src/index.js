@@ -189,12 +189,9 @@ function update() {
 
 app.whenReady().then(() => {
     // Handle all the calls made from the renderer
-    ipcMain.handle('getHiddenApps', getHiddenApps);
     ipcMain.handle('getAppsDisplayNames', getAppsDisplayNames);
 
     ipcMain.on('addAppDisplayName', addAppDisplayName);
-    ipcMain.on('addHiddenApp', addHiddenApp);
-    ipcMain.on('removeHiddenApp', removeHiddenApp);
 
     ipcMain.handle('getRunningApps', getRunningApps);
     ipcMain.handle('getNotRunningApps', getNotRunningApps);
@@ -220,23 +217,6 @@ app.on('window-all-closed', () => {
     }
 })
 
-function removeHiddenApp(_event, app) {
-    // Remove the app from the hiddenApps array
-    hiddenApps.splice(hiddenApps.indexOf(app), 1);
-
-    logger.info(`Removed ${app} from the hiddenApps`);
-}
-
-function addHiddenApp(_event, app) {
-    // If the app already exists in the hiddenApps array return
-    if(hiddenApps.includes(app)) return;
-
-    // Add the app to the hiddenApps array
-    hiddenApps.push(app);
-
-    logger.info(`Added ${app} to the hiddenApps`);
-}
-
 function addAppDisplayName(_event, app) {
     for (let i = 0; i < appsDisplayNames.length; i++) {  
         if(appsDisplayNames[i].appName == app.appName) {
@@ -255,10 +235,6 @@ function addAppDisplayName(_event, app) {
     appsDisplayNames.push(app);
 
     logger.info(`Renamed ${app.appName} to ${app.displayName}`);
-}
-
-async function getHiddenApps() {
-    return hiddenApps;
 }
 
 async function getAppsDisplayNames() {
