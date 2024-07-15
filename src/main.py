@@ -39,10 +39,6 @@ flask_app = Flask("Screen Time")
 # The port for the Flask app
 FLASK_PORT = 8080
 
-# A queue yo use inter-thread communication
-update_queue = Queue(1)
-
-
 # A filter for the logger to remove the color from the logs
 class RemoveColorFilter(logging.Filter):
     def filter(self, record) -> bool:
